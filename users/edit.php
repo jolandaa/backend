@@ -25,7 +25,8 @@ $returnData = [];
 if ($_SERVER["REQUEST_METHOD"] != "POST") :
 
     $returnData = msg(0, 404, 'Page Not Found!');
-
+elseif (!array_key_exists('Authorization', $allHeaders)) :
+    $returnData = msg(0, 401, 'You need token!');
 elseif (
     !isset($data->user_id)
     || !isset($data->first_name)

@@ -45,7 +45,12 @@ $school_id = $_GET['school_id'];
 
     try {
 
-        $list_query = "SELECT * from `classes` WHERE `school_id`=$school_id";
+        $list_query = "SELECT classes.class_name, classes.class_description, classes.year, classes.teacher_id, users.first_name, users.last_name, classes.class_id
+                        from ((`classes` 
+                        INNER JOIN `teachers` 
+                        ON classes.teacher_id = teachers.teacher_id AND classes.school_id=$school_id)
+                        INNER JOIN `users` 
+                        ON teachers.user_id = users.user_id)";
         $query_stmt = $conn->prepare($list_query);
         $query_stmt->execute();
         $row = $query_stmt->fetchALL(PDO::FETCH_ASSOC);

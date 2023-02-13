@@ -77,7 +77,7 @@ else:
                     $jwt = new JwtHandler();
                     $token = $jwt->jwtEncodeData(
                         'http://localhost/WEB/backend/',
-                        array("user_id"=> $user_id)
+                        array("user_id"=> $user_id,"role"=> $role)
                     );
 
 

@@ -26,8 +26,8 @@ if ($_SERVER["REQUEST_METHOD"] != "POST") :
 
     $returnData = msg(0, 404, 'Page Not Found!');
 
-    echo print_r($data);
-
+elseif (!array_key_exists('Authorization', $allHeaders)) :
+    $returnData = msg(0, 401, 'You need token!');
 elseif (
     !isset($data->school_id)
     || empty(trim($data->school_id))

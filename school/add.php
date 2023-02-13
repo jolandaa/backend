@@ -25,7 +25,8 @@ $returnData = [];
 if ($_SERVER["REQUEST_METHOD"] != "POST") :
 
     $returnData = msg(0, 404, 'Page Not Found!');
-
+elseif (!array_key_exists('Authorization', $allHeaders)) :
+    $returnData = msg(0, 401, 'You need token!');
 elseif (
     !isset($data->admin_id)
     || !isset($data->name)
@@ -95,7 +96,11 @@ else :
 
                 $insert_stmt->execute();
 
+
                 $returnData = msg(1, 201, 'You have successfully added this school.');
+            } else {
+                $returnData = msg(0, 400, 'You should choose a valid user id for school administration.');
+
             }
 
 

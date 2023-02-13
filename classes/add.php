@@ -25,25 +25,29 @@ $returnData = [];
 if ($_SERVER["REQUEST_METHOD"] != "POST") :
 
     $returnData = msg(0, 404, 'Page Not Found!');
-
+elseif (!array_key_exists('Authorization', $allHeaders)) :
+    $returnData = msg(0, 401, 'You need token!');
 elseif (
     !isset($data->school_id)
+    || !isset($data->teacher_id)
     || !isset($data->name)
     || !isset($data->description)
     || !isset($data->year)
     || empty(trim($data->school_id))
+    || empty(trim($data->teacher_id))
     || empty(trim($data->name))
     || empty(trim($data->description))
     || empty(trim($data->year))
 ) :
 
-    $fields = ['fields' => ['school_id', 'name', 'description', 'year']];
+    $fields = ['fields' => ['school_id', 'teacher_id', 'name', 'description', 'year']];
     $returnData = msg(0, 422, 'Please Fill in all Required Fields!', $fields);
 
 // IF THERE ARE NO EMPTY FIELDS THEN-
 else :
 
     $school_id = trim($data->school_id);
+    $teacher_id = trim($data->teacher_id);
     $class_name = trim($data->name);
     $class_description = trim($data->description);
     $year = trim($data->year);
@@ -61,7 +65,7 @@ else :
 
             else :
 
-                $insert_query = "INSERT INTO `classes`( `class_name`, `class_description`, `year`, `school_id`) VALUES(:class_name,:class_description,:year,:school_id)";
+                $insert_query = "INSERT INTO `classes`( `class_name`, `class_description`, `year`, `school_id`, `teacher_id`) VALUES(:class_name,:class_description,:year,:school_id,:teacher_id)";
 
                 $insert_stmt = $conn->prepare($insert_query);
 
@@ -69,6 +73,7 @@ else :
                 $insert_stmt->bindValue(':class_name', $class_name, PDO::PARAM_STR);
                 $insert_stmt->bindValue(':class_description', $class_description, PDO::PARAM_STR);
                 $insert_stmt->bindValue(':school_id', $school_id, PDO::PARAM_STR);
+                $insert_stmt->bindValue(':teacher_id', $teacher_id, PDO::PARAM_STR);
                 $insert_stmt->bindValue(':year', $year, PDO::PARAM_STR);
 
                 $insert_stmt->execute();

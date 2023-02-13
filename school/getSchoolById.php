@@ -25,7 +25,8 @@ $returnData = [];
 if ($_SERVER["REQUEST_METHOD"] != "GET") :
 
     $returnData = msg(0, 404, 'Page Not Found!');
-
+elseif (!array_key_exists('Authorization', $allHeaders)) :
+    $returnData = msg(0, 401, 'You need token!');
 elseif (
     !isset($_GET['school_id'])
     || empty(trim($_GET['school_id']))

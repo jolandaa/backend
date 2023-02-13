@@ -28,28 +28,28 @@ if ($_SERVER["REQUEST_METHOD"] != "GET") :
 elseif (!array_key_exists('Authorization', $allHeaders)) :
     $returnData = msg(0, 401, 'You need token!');
 elseif (
-    !isset($_GET['user_id'])
-    || empty(trim($_GET['user_id']))
+    !isset($_GET['parent_id'])
+    || empty(trim($_GET['parent_id']))
 ) :
 
-    $fields = ['fields' => ['user_id']];
+    $fields = ['fields' => ['parent_id']];
     $returnData = msg(0, 422, 'Please Fill in all Required Fields!', $fields);
 
 // IF THERE ARE NO EMPTY FIELDS THEN-
 else :
-$user_id = $_GET['user_id'];
+$parent_id = $_GET['parent_id'];
 
     try {
 
-        $list_query = "SELECT * from `users` WHERE `user_id`=$user_id";
+        $list_query = "SELECT * from `students` WHERE `parent_id`=$parent_id";
         $query_stmt = $conn->prepare($list_query);
         $query_stmt->execute();
         $row = $query_stmt->fetchALL(PDO::FETCH_ASSOC);
 
         $returnData = [
                 'success' => 1,
-                'message' => 'You have successfully get user',
-                'data' => $row[0]
+                'message' => 'You have successfully get children of this parent.',
+                'list' => $row
             ];
 
     } catch (PDOException $e) {
