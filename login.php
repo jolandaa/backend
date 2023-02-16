@@ -35,19 +35,29 @@ elseif(!isset($data->email)
 
     $fields = ['fields' => ['email','password']];
     $returnData = msg(0,422,'Please Fill in all Required Fields!',$fields);
+    http_response_code(422);
+    echo json_encode(['error'=>'Please Fill in all Required Fields!',$fields]);
+    exit;
 
 // IF THERE ARE NO EMPTY FIELDS THEN-
 else:
+
     $email = trim($data->email);
     $password = trim($data->password);
 
     // CHECKING THE EMAIL FORMAT (IF INVALID FORMAT)
     if(!filter_var($email, FILTER_VALIDATE_EMAIL)):
         $returnData = msg(0,422,'Invalid Email Address!');
+        http_response_code(422);
+        echo json_encode(['error'=>'Invalid Email Address!']);
+        exit;
     
     // IF PASSWORD IS LESS THAN 8 THE SHOW THE ERROR
     elseif(strlen($password) < 8):
         $returnData = msg(0,422,'Your password must be at least 8 characters long!');
+        http_response_code(422);
+        echo json_encode(['error'=>'Your password must be at least 8 characters long!']);
+        exit;
 
     // THE USER IS ABLE TO PERFORM THE LOGIN ACTION
     else:
@@ -97,6 +107,7 @@ else:
                         ]
                     ];
 
+
                     if ($role == 2) {
                         $fetch_school_by_user = "SELECT * FROM `schools` WHERE admin_id=$user_id";
                         $query_school_by_user_stmt = $conn->prepare($fetch_school_by_user);
@@ -107,21 +118,48 @@ else:
                             $school_by_user_row = $query_school_by_user_stmt->fetch(PDO::FETCH_ASSOC);
                             $returnData['user']['school_id'] = $school_by_user_row['school_id'];
                         endif;                       
-                    } else {
+                    } elseif ($role == 3) {
+                        $fetch_teacher_by_user = "SELECT * FROM `teachers` WHERE user_id=$user_id";
+                        $query_teacher_by_user_stmt = $conn->prepare($fetch_teacher_by_user);
+                        $query_teacher_by_user_stmt->execute(); 
+                        if($query_teacher_by_user_stmt->rowCount()):
 
+                            $teacher_by_user_row = $query_teacher_by_user_stmt->fetch(PDO::FETCH_ASSOC);
+                            $returnData['user']['teacher_profile'] = $teacher_by_user_row;
+                        endif;
+                    } elseif ($role == 4) {
+                        $fetch_parent_by_user = "SELECT * FROM `parents` WHERE user_id=$user_id";
+                        $query_parent_by_user_stmt = $conn->prepare($fetch_parent_by_user);
+                        $query_parent_by_user_stmt->execute(); 
+                        if($query_parent_by_user_stmt->rowCount()):
+
+                            $parent_by_user_row = $query_parent_by_user_stmt->fetch(PDO::FETCH_ASSOC);
+                            $returnData['user']['parent_profile'] = $parent_by_user_row;
+                        endif;
+                    } else {
+                        
                     }
                 // IF INVALID PASSWORD
                 else:
                     $returnData = msg(0,422,'Invalid Password!');
+                    http_response_code(422);
+                    echo json_encode(['error'=>'Invalid Password!']);
+                    exit;
                 endif;
 
             // IF THE USER IS NOT FOUNDED BY EMAIL THEN SHOW THE FOLLOWING ERROR
             else:
                 $returnData = msg(0,422,'Invalid Email Address!');
+                http_response_code(422);
+                echo json_encode(['error'=>'Invalid Email Address!']);
+                exit;
             endif;
         }
         catch(PDOException $e){
             $returnData = msg(0,500,$e->getMessage());
+            http_response_code(500);
+            echo json_encode(['error'=>$e->getMessage()]);
+            exit;
         }
 
     endif;

@@ -29,6 +29,45 @@ class Auth extends JwtHandler
                     "success" => 1,
                     "user" => $user
                 ];
+            elseif ($data['message'] == 401) :
+                return [
+                    "success" => 401,
+                    "message" => 'Expired token',
+                ];
+            else :
+                return [
+                    "success" => 0,
+                    "message" => $data['message'],
+                ];
+            endif;
+        } else {
+            return [
+                "success" => 0,
+                "message" => "Token not found in request"
+            ];
+        }
+    }
+
+    public function isValidToken()
+    {
+
+        if (array_key_exists('Authorization', $this->headers) && preg_match('/Bearer\s(\S+)/', $this->headers['Authorization'], $matches)) {
+
+            $data = $this->jwtDecodeData($matches[1]);
+
+            if (
+                isset($data['data']->user_id) &&
+                $user = $this->fetchUser($data['data']->user_id)
+            ) :
+                return [
+                    "success" => 1,
+                    "message" => 'Success',
+                ];
+            elseif ($data['message'] == 401) :
+                return [
+                    "success" => 401,
+                    "message" => 'Expired token',
+                ];
             else :
                 return [
                     "success" => 0,
