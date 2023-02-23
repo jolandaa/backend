@@ -32,9 +32,6 @@ $returnData = [];
 if ($_SERVER["REQUEST_METHOD"] != "POST") :
 
     $returnData = msg(0, 404, 'Page Not Found!');
-    http_response_code(404);
-    echo json_encode(['error'=>'Page Not Found!']);
-    exit;
 elseif (!array_key_exists('Authorization', $allHeaders)) :
     $returnData = msg(0, 401, 'You need token!');
     return $error_responses->UnAuthorized();
@@ -51,7 +48,7 @@ elseif (
 
     $fields = ['fields' => ['class_id', 'name', 'description', 'year']];
     $returnData = msg(0, 422, 'Please Fill in all Required Fields!', $fields);
-
+    return $error_responses->BadPayload('Please Fill in all Required Fields!');
 // IF THERE ARE NO EMPTY FIELDS THEN-
 else :
 
@@ -94,7 +91,13 @@ else :
             endif;
         } catch (PDOException $e) {
             $returnData = msg(0, 500, $e->getMessage());
+            $returnData = msg(0, 500, $e->getMessage());
+            http_response_code(500);
+            echo json_encode(['error'=>$e->getMessage()]);
+            exit;
         }
+    } else {
+        return $error_responses->UnAuthorized($isValidToken['message']);
     }
 endif;
 

@@ -13,4 +13,16 @@ class ErrorResponses{
 	    echo json_encode(['error'=>$msg]);
 	    exit;
     }
+
+    public function BadPayload($msg=''){
+        http_response_code(422);
+        echo json_encode(['error'=>$msg]);
+        exit;
+    }
+
+    public function PageNotFound($msg='Page Not Found!'){
+        http_response_code(405);
+        echo json_encode(['error'=>$msg]);
+        exit;
+    }
 }

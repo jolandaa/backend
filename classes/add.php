@@ -32,9 +32,6 @@ $returnData = [];
 if ($_SERVER["REQUEST_METHOD"] != "POST") :
 
     $returnData = msg(0, 404, 'Page Not Found!');
-    http_response_code(404);
-    echo json_encode(['error'=>'Page Not Found!']);
-    exit;
 elseif (!array_key_exists('Authorization', $allHeaders)) :
     $returnData = msg(0, 401, 'You need token!');
     return $error_responses->UnAuthorized();
@@ -53,7 +50,7 @@ elseif (
 
     $fields = ['fields' => ['school_id', 'teacher_id', 'name', 'description', 'year']];
     $returnData = msg(0, 422, 'Please Fill in all Required Fields!', $fields);
-
+    return $error_responses->BadPayload('Please Fill in all Required Fields!');
 // IF THERE ARE NO EMPTY FIELDS THEN-
 else :
 
@@ -68,14 +65,15 @@ else :
 
         try {
 
-            $check_name = "SELECT `class_name` FROM `classes` WHERE `class_name`=:class_name";
+            $check_name = "SELECT `class_name` FROM `classes` WHERE `class_name`=:class_name AND `school_id` =:school_id";
             $check_name_stmt = $conn->prepare($check_name);
             $check_name_stmt->bindValue(':class_name', $class_name, PDO::PARAM_STR);
+            $check_name_stmt->bindValue(':school_id', $school_id, PDO::PARAM_STR);
             $check_name_stmt->execute();
 
             if ($check_name_stmt->rowCount()) :
-                $returnData = msg(0, 422, 'This Class already is added!');
-
+                $returnData = msg(0, 422, 'This Class already is added for this school!');
+                return $error_responses->BadPayload('This Class already is added for this school!');
             else :
 
                 $insert_query = "INSERT INTO `classes`( `class_name`, `class_description`, `year`, `school_id`, `teacher_id`) VALUES(:class_name,:class_description,:year,:school_id,:teacher_id)";
@@ -98,6 +96,9 @@ else :
             endif;
         } catch (PDOException $e) {
             $returnData = msg(0, 500, $e->getMessage());
+            http_response_code(500);
+            echo json_encode(['error'=>$e->getMessage()]);
+            exit;
         }
     } else {
         return $error_responses->UnAuthorized($isValidToken['message']);

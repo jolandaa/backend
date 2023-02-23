@@ -7,12 +7,14 @@ header("Access-Control-Allow-Headers: Content-Type, Access-Control-Allow-Headers
 
 require __DIR__ . '/../shared/Database.php';
 require __DIR__.'/../AuthMiddleware.php';
+require __DIR__ . '/../shared/errorResponses.php';
 
 $allHeaders = getallheaders();
 
 $db_connection = new Database();
 $conn = $db_connection->dbConnection();
 $auth = new Auth($conn, $allHeaders);
+$error_responses = new ErrorResponses();
 
 function msg($success, $status, $message, $extra = [])
 {
@@ -32,6 +34,7 @@ if ($_SERVER["REQUEST_METHOD"] != "POST") :
     $returnData = msg(0, 404, 'Page Not Found!');
 elseif (!array_key_exists('Authorization', $allHeaders)) :
     $returnData = msg(0, 401, 'You need token!');
+    return $error_responses->UnAuthorized();
 elseif (
     !isset($data->user_id)
     || !isset($data->first_name)
@@ -48,11 +51,12 @@ elseif (
 
 // IF THERE ARE NO EMPTY FIELDS THEN-
 else :
-
-    $user_id = trim($data->user_id);
-    $first_name = trim($data->first_name);
-    $last_name = trim($data->last_name);
-    $email = trim($data->email);
+    $isValidToken = $auth->isValidToken();
+    if ($isValidToken['success'] == 1) {
+        $user_id = trim($data->user_id);
+        $first_name = trim($data->first_name);
+        $last_name = trim($data->last_name);
+        $email = trim($data->email);
 
 
         try {
@@ -64,6 +68,7 @@ else :
 
             if ($check_email_stmt->rowCount()) :
                 $returnData = msg(0, 422, 'This User already is added!');
+                return $error_responses->BadPayload('This User already is added!');
 
             else :
                 $insert_query = "UPDATE `users` SET 
@@ -80,12 +85,19 @@ else :
 
                 $insert_stmt->execute();
 
-                $returnData = msg(1, 201, 'You have successfully edited this user.');
+                $returnData = msg(1, 200, 'You have successfully edited this user.');
 
             endif;
         } catch (PDOException $e) {
             $returnData = msg(0, 500, $e->getMessage());
+            http_response_code(500);
+            echo json_encode(['error'=>$e->getMessage()]);
+            exit;
         }
+    } else {
+        return $error_responses->UnAuthorized($isValidToken['message']);
+    }
+
 endif;
 
 echo json_encode($returnData);

@@ -32,30 +32,38 @@ $returnData = [];
 if ($_SERVER["REQUEST_METHOD"] != "GET") :
 
     $returnData = msg(0, 404, 'Page Not Found!');
-
 elseif (!array_key_exists('Authorization', $allHeaders)) :
     $returnData = msg(0, 401, 'You need token!');
     return $error_responses->UnAuthorized();
+elseif (
+    !isset($_GET['teacher_id'])
+    || empty(trim($_GET['teacher_id']))
+) :
 
+    $fields = ['fields' => ['teacher_id']];
+    $returnData = msg(0, 422, 'Please Fill in all Required Fields!', $fields);
+    return $error_responses->BadPayload('Please Fill in all Required Fields!');
 // IF THERE ARE NO EMPTY FIELDS THEN-
 else :
     $isValidToken = $auth->isValidToken();
     if ($isValidToken['success'] == 1) {
+
+        $teacher_id = $_GET['teacher_id'];
+
         try {
 
-            $list_query = "SELECT * from `schools`";
+            $list_query = "SELECT * from `classes` WHERE `teacher_id`=$teacher_id";
             $query_stmt = $conn->prepare($list_query);
             $query_stmt->execute();
             $row = $query_stmt->fetchALL(PDO::FETCH_ASSOC);
 
             $returnData = [
                     'success' => 1,
-                    'message' => 'You have successfully get school list',
-                    'list' => $row
+                    'message' => 'You have successfully get class',
+                    'data' => $row
                 ];
 
-
-        } catch (HttpException $e) {
+        } catch (PDOException $e) {
             $returnData = msg(0, 500, $e->getMessage());
             http_response_code(500);
             echo json_encode(['error'=>$e->getMessage()]);
@@ -64,7 +72,6 @@ else :
     } else {
         return $error_responses->UnAuthorized($isValidToken['message']);
     }
-
 endif;
 
 echo json_encode($returnData);

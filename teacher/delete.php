@@ -7,12 +7,14 @@ header("Access-Control-Allow-Headers: Content-Type, Access-Control-Allow-Headers
 
 require __DIR__ . '/../shared/Database.php';
 require __DIR__.'/../AuthMiddleware.php';
+require __DIR__ . '/../shared/errorResponses.php';
 
 $allHeaders = getallheaders();
 
 $db_connection = new Database();
 $conn = $db_connection->dbConnection();
 $auth = new Auth($conn, $allHeaders);
+$error_responses = new ErrorResponses();
 
 function msg($success, $status, $message, $extra = [])
 {
@@ -33,6 +35,7 @@ if ($_SERVER["REQUEST_METHOD"] != "POST") :
 
 elseif (!array_key_exists('Authorization', $allHeaders)) :
     $returnData = msg(0, 401, 'You need token!');
+    return $error_responses->UnAuthorized();
 elseif (
     !isset($data->teacher_id)
     || !isset($data->user_id)    
@@ -42,12 +45,13 @@ elseif (
 
     $fields = ['fields' => ['teacher_id','user_id']];
     $returnData = msg(0, 422, 'Please Fill in all Required Fields!', $fields);
-
+    return $error_responses->BadPayload('Please Fill in all Required Fields!');
 // IF THERE ARE NO EMPTY FIELDS THEN-
 else :
-
-    $teacher_id = trim($data->teacher_id);
-    $user_id = trim($data->user_id);
+    $isValidToken = $auth->isValidToken();
+    if ($isValidToken['success'] == 1) {
+        $teacher_id = trim($data->teacher_id);
+        $user_id = trim($data->user_id);
 
         try {
 
@@ -65,7 +69,14 @@ else :
 
         } catch (PDOException $e) {
             $returnData = msg(0, 500, $e->getMessage());
+            http_response_code(500);
+            echo json_encode(['error'=>$e->getMessage()]);
+            exit;
         }
+    } else {
+        return $error_responses->UnAuthorized($isValidToken['message']);
+    }
+    
 endif;
 
 echo json_encode($returnData);

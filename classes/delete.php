@@ -32,9 +32,6 @@ $returnData = [];
 if ($_SERVER["REQUEST_METHOD"] != "POST") :
 
     $returnData = msg(0, 404, 'Page Not Found!');
-    http_response_code(404);
-    echo json_encode(['error'=>'Page Not Found!']);
-    exit;
 elseif (!array_key_exists('Authorization', $allHeaders)) :
     $returnData = msg(0, 401, 'You need token!');
     return $error_responses->UnAuthorized();
@@ -54,9 +51,6 @@ else :
         $class_id = trim($data->class_id);
 
         try {
-
-
-
 
             $insert_query = "DELETE FROM `classes` WHERE class_id=$class_id";
 

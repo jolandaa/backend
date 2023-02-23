@@ -3,7 +3,7 @@ class Database{
     
     // CHANGE THE DB INFO ACCORDING TO YOUR DATABASE
     private $db_host = 'localhost';
-    private $db_name = 'schhol_management';
+    private $db_name = 'school_management';
     private $db_username = 'root';
     private $db_password = '';
     
