@@ -36,33 +36,35 @@ elseif (!array_key_exists('Authorization', $allHeaders)) :
     $returnData = msg(0, 401, 'You need token!');
     return $error_responses->UnAuthorized();
 elseif (
-    !isset($_GET['parent_id'])
-    || empty(trim($_GET['parent_id']))
+    !isset($_GET['student_id'])
+    || empty(trim($_GET['student_id']))
 ) :
 
-    $fields = ['fields' => ['parent_id']];
+    $fields = ['fields' => ['class_id','date']];
     $returnData = msg(0, 422, 'Please Fill in all Required Fields!', $fields);
     return $error_responses->BadPayload('Please Fill in all Required Fields!');
 // IF THERE ARE NO EMPTY FIELDS THEN-
 else :
     $isValidToken = $auth->isValidToken();
     if ($isValidToken['success'] == 1) {
-        $parent_id = $_GET['parent_id'];
+        $student_id = $_GET['student_id'];
 
         try {
 
             $list_query = "SELECT * 
-                            from `parents` 
-                            INNER JOIN `users` 
-                            ON parents.parent_id = $parent_id AND parents.user_id = users.user_id";
+                            from `attendance` 
+                            INNER JOIN `students` 
+                            ON attendance.student_id = $student_id AND attendance.status = 1 AND students.nr_amzes = attendance.student_id
+                            INNER JOIN `classes`
+                            ON attendance.class_id = classes.class_id";
             $query_stmt = $conn->prepare($list_query);
             $query_stmt->execute();
             $row = $query_stmt->fetchALL(PDO::FETCH_ASSOC);
 
             $returnData = [
                     'success' => 1,
-                    'message' => 'You have successfully get parent.',
-                    'data' => $row[0]
+                    'message' => 'You have successfully get attendance.',
+                    'data' => $row
                 ];
 
         } catch (PDOException $e) {

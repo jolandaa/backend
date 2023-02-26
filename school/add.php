@@ -93,7 +93,10 @@ else :
                     $returnData = msg(0, 422, 'This user is already added as admin of another school!');
                     return $error_responses->BadPayload('This user is already added as admin of another school!');
                 } else {
-                    $insert_query = "INSERT INTO `schools`( `name`, `description`, `logo`, `street`, `country`, `city`, `zipCode`, `admin_id`) VALUES(:name,:description,:logo,:street,:country,:city,:zipCode,:admin_id)";
+
+                    $created_date =  date('Y-m-d');
+
+                    $insert_query = "INSERT INTO `schools`( `name`, `description`, `logo`, `street`, `country`, `city`, `zipCode`, `admin_id`, `created_date`) VALUES(:name,:description,:logo,:street,:country,:city,:zipCode,:admin_id, :created_date)";
 
                     $insert_stmt = $conn->prepare($insert_query);
 
@@ -106,6 +109,7 @@ else :
                     $insert_stmt->bindValue(':city', $city, PDO::PARAM_STR);
                     $insert_stmt->bindValue(':zipCode', $zipCode, PDO::PARAM_STR);
                     $insert_stmt->bindValue(':logo', $logo, PDO::PARAM_STR);
+                    $insert_stmt->bindValue(':created_date', $created_date, PDO::PARAM_STR);
 
                     $insert_stmt->execute();
 

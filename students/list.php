@@ -7,12 +7,14 @@ header("Access-Control-Allow-Headers: Content-Type, Access-Control-Allow-Headers
 
 require __DIR__ . '/../shared/Database.php';
 require __DIR__.'/../AuthMiddleware.php';
+require __DIR__ . '/../shared/errorResponses.php';
 
 $allHeaders = getallheaders();
 
 $db_connection = new Database();
 $conn = $db_connection->dbConnection();
 $auth = new Auth($conn, $allHeaders);
+$error_responses = new ErrorResponses();
 
 function msg($success, $status, $message, $extra = [])
 {
@@ -33,7 +35,7 @@ if ($_SERVER["REQUEST_METHOD"] != "GET") :
 
 elseif (!array_key_exists('Authorization', $allHeaders)) :
     $returnData = msg(0, 401, 'You need token!');
-
+    return $error_responses->UnAuthorized();
 elseif (
     !isset($_GET['school_id'])
     || empty(trim($_GET['school_id']))
@@ -41,31 +43,40 @@ elseif (
 
     $fields = ['fields' => ['school_id']];
     $returnData = msg(0, 422, 'Please Fill in all Required Fields!', $fields);
+    return $error_responses->BadPayload('Please Fill in all Required Fields!');
 
 // IF THERE ARE NO EMPTY FIELDS THEN-
 else :
-$school_id = $_GET['school_id'];
+    $isValidToken = $auth->isValidToken();
+    if ($isValidToken['success'] == 1) {
+        $school_id = $_GET['school_id'];
 
-    try {
+        try {
 
-        $list_query = "SELECT * 
-                        from `students` 
-                        WHERE students.school_id = $school_id";
+            $list_query = "SELECT *
+                            from `students` WHERE school_id = $school_id";
 
-        $query_stmt = $conn->prepare($list_query);
-        $query_stmt->execute();
-        $row = $query_stmt->fetchALL(PDO::FETCH_ASSOC);
+            $query_stmt = $conn->prepare($list_query);
+            $query_stmt->execute();
+            $row = $query_stmt->fetchALL(PDO::FETCH_ASSOC);
 
-        $returnData = [
-                'success' => 1,
-                'message' => 'You have successfully get students list',
-                'list' => $row
-            ];
+            $returnData = [
+                    'success' => 1,
+                    'message' => 'You have successfully get students list',
+                    'list' => $row
+                ];
 
 
-    } catch (HttpException $e) {
-        $returnData = msg(0, 500, $e->getMessage());
+        } catch (HttpException $e) {
+            $returnData = msg(0, 500, $e->getMessage());
+            http_response_code(500);
+            echo json_encode(['error'=>$e->getMessage()]);
+            exit;
+        }
+    } else {
+        return $error_responses->UnAuthorized($isValidToken['message']);
     }
+
 endif;
 
 echo json_encode($returnData);

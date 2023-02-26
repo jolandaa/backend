@@ -72,7 +72,9 @@ else :
             else :
                 if (!$role) $role = 1;
 
-                $insert_query = "INSERT INTO `users`(`username`,`email`,`password`, `role`) VALUES(:username,:email,:password,:role)";
+                $created_date =  date();
+
+                $insert_query = "INSERT INTO `users`(`username`,`email`,`password`, `role`, `created_date`) VALUES(:username,:email,:password,:role, :created_date)";
 
                 $insert_stmt = $conn->prepare($insert_query);
 
@@ -81,6 +83,7 @@ else :
                 $insert_stmt->bindValue(':email', $email, PDO::PARAM_STR);
                 $insert_stmt->bindValue(':password', password_hash($password, PASSWORD_DEFAULT), PDO::PARAM_STR);
                 $insert_stmt->bindValue(':role', $role, PDO::PARAM_STR);
+                $insert_stmt->bindValue(':created_date', $created_date, PDO::PARAM_STR);
 
                 $insert_stmt->execute();
 

@@ -1,7 +1,7 @@
 <?php
 header("Access-Control-Allow-Origin: *");
 header("Access-Control-Allow-Headers: access");
-header("Access-Control-Allow-Methods: GET");
+header("Access-Control-Allow-Methods: POST");
 header("Content-Type: application/json; charset=UTF-8");
 header("Access-Control-Allow-Headers: Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With");
 
@@ -29,41 +29,61 @@ function msg($success, $status, $message, $extra = [])
 $data = json_decode(file_get_contents("php://input"));
 $returnData = [];
 
-if ($_SERVER["REQUEST_METHOD"] != "GET") :
+if ($_SERVER["REQUEST_METHOD"] != "POST") :
 
     $returnData = msg(0, 404, 'Page Not Found!');
 elseif (!array_key_exists('Authorization', $allHeaders)) :
     $returnData = msg(0, 401, 'You need token!');
     return $error_responses->UnAuthorized();
 elseif (
-    !isset($_GET['parent_id'])
-    || empty(trim($_GET['parent_id']))
+    !isset($data->teacher_id)
+    || !isset($data->class_id)
+    || !isset($data->date)
+    || !isset($data->attendanceList)
+    || empty(trim($data->teacher_id))
+    || empty(trim($data->class_id))
+    || empty(trim($data->date))
+    || empty($data->attendanceList)
 ) :
 
-    $fields = ['fields' => ['parent_id']];
+    $fields = ['fields' => [ 'teacher_id', 'class_id', 'date','attendanceList']];
     $returnData = msg(0, 422, 'Please Fill in all Required Fields!', $fields);
     return $error_responses->BadPayload('Please Fill in all Required Fields!');
 // IF THERE ARE NO EMPTY FIELDS THEN-
 else :
+
     $isValidToken = $auth->isValidToken();
     if ($isValidToken['success'] == 1) {
-        $parent_id = $_GET['parent_id'];
+        $teacher_id = trim($data->teacher_id);
+        $class_id = trim($data->class_id);
+        $date = trim($data->date);
+        $attendanceList = $data->attendanceList;
+        $status = 2;
 
         try {
 
-            $list_query = "SELECT * 
-                            from `parents` 
-                            INNER JOIN `users` 
-                            ON parents.parent_id = $parent_id AND parents.user_id = users.user_id";
-            $query_stmt = $conn->prepare($list_query);
-            $query_stmt->execute();
-            $row = $query_stmt->fetchALL(PDO::FETCH_ASSOC);
 
-            $returnData = [
-                    'success' => 1,
-                    'message' => 'You have successfully get parent.',
-                    'data' => $row[0]
-                ];
+            for ($i=0; $i < count($attendanceList); $i++) { 
+                $student_id = $attendanceList[$i]->nr_amzes;
+                $grade = $attendanceList[$i]->grade;
+
+
+                $insert_query = "INSERT INTO `grades`( `teacher_id`, `class_id`, `date`, `status`, `student_id`, `grade`) VALUES(:teacher_id,:class_id,:date,:status,:student_id,:grade)";
+
+                $insert_stmt = $conn->prepare($insert_query);
+                // DATA BINDING
+                $insert_stmt->bindValue(':teacher_id', $teacher_id, PDO::PARAM_STR);
+                $insert_stmt->bindValue(':class_id', $class_id, PDO::PARAM_STR);   
+                $insert_stmt->bindValue(':date', $date, PDO::PARAM_STR);
+                $insert_stmt->bindValue(':status', $status, PDO::PARAM_STR);
+                $insert_stmt->bindValue(':student_id', $student_id, PDO::PARAM_STR);
+                $insert_stmt->bindValue(':grade', $grade, PDO::PARAM_STR);
+                $insert_stmt->execute();
+
+            }
+
+            $returnData = msg(1, 200, 'You have successfully added this grafe.');
+
 
         } catch (PDOException $e) {
             $returnData = msg(0, 500, $e->getMessage());

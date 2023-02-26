@@ -75,8 +75,9 @@ else :
                 $returnData = msg(0, 422, 'This Class already is added for this school!');
                 return $error_responses->BadPayload('This Class already is added for this school!');
             else :
+                $created_date =  date('Y-m-d');
 
-                $insert_query = "INSERT INTO `classes`( `class_name`, `class_description`, `year`, `school_id`, `teacher_id`) VALUES(:class_name,:class_description,:year,:school_id,:teacher_id)";
+                $insert_query = "INSERT INTO `classes`( `class_name`, `class_description`, `year`, `school_id`, `teacher_id`, `created_date`) VALUES(:class_name,:class_description,:year,:school_id,:teacher_id, :created_date)";
 
                 $insert_stmt = $conn->prepare($insert_query);
 
@@ -86,6 +87,7 @@ else :
                 $insert_stmt->bindValue(':school_id', $school_id, PDO::PARAM_STR);
                 $insert_stmt->bindValue(':teacher_id', $teacher_id, PDO::PARAM_STR);
                 $insert_stmt->bindValue(':year', $year, PDO::PARAM_STR);
+                $insert_stmt->bindValue(':created_date', $created_date, PDO::PARAM_STR);
 
                 $insert_stmt->execute();
 

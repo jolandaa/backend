@@ -32,40 +32,63 @@ $returnData = [];
 if ($_SERVER["REQUEST_METHOD"] != "POST") :
 
     $returnData = msg(0, 404, 'Page Not Found!');
-
 elseif (!array_key_exists('Authorization', $allHeaders)) :
     $returnData = msg(0, 401, 'You need token!');
     return $error_responses->UnAuthorized();
 elseif (
-    !isset($data->parent_id)
-    || !isset($data->user_id)    
-    || empty(trim($data->parent_id))
-    || empty(trim($data->user_id))
+    !isset($data->teacher_id)
+    || !isset($data->class_id)
+    || !isset($data->date)
+    || !isset($data->attendanceList)
+    || empty(trim($data->teacher_id))
+    || empty(trim($data->class_id))
+    || empty(trim($data->date))
+    || empty($data->attendanceList)
 ) :
 
-    $fields = ['fields' => ['parent_id','user_id']];
+    $fields = ['fields' => [ 'teacher_id', 'class_id', 'date','attendanceList']];
     $returnData = msg(0, 422, 'Please Fill in all Required Fields!', $fields);
     return $error_responses->BadPayload('Please Fill in all Required Fields!');
 // IF THERE ARE NO EMPTY FIELDS THEN-
 else :
+
     $isValidToken = $auth->isValidToken();
     if ($isValidToken['success'] == 1) {
-        $parent_id = trim($data->parent_id);
-        $user_id = trim($data->user_id);
+        $teacher_id = trim($data->teacher_id);
+        $class_id = trim($data->class_id);
+        $date = trim($data->date);
+        $attendanceList = $data->attendanceList;
+        $status = 2;
+
+        if (isset($data->status)) {
+            $status = $data->status;
+        }
+
 
         try {
 
-            $delete_parent_query = "DELETE FROM `parents` WHERE parent_id=$parent_id";
+            for ($i=0; $i < count($attendanceList); $i++) { 
+                $student_id = $attendanceList[$i]->nr_amzes;
+                $attendance_id = $attendanceList[$i]->attendance_id;
+                $attendance_value = $attendanceList[$i]->attendance_value;
+                $status = $attendanceList[$i]->status;
 
-            $delete_parent_stmt = $conn->prepare($delete_parent_query);
-            $delete_parent_stmt->execute();
+                $insert_query = "UPDATE `attendance` SET 
+                    status = :status, 
+                    student_id = :student_id, 
+                    attendance_value = :attendance_value WHERE attendance_id=$attendance_id ";
 
-            $delete_user_query = "DELETE FROM `users` WHERE user_id=$user_id";
+                $insert_stmt = $conn->prepare($insert_query);
 
-            $elete_user_stmt = $conn->prepare($delete_user_query);
-            $elete_user_stmt->execute();
+                // DATA BINDING
+                $insert_stmt->bindValue(':status', $status, PDO::PARAM_STR);
+                $insert_stmt->bindValue(':student_id', $student_id, PDO::PARAM_STR);
+                $insert_stmt->bindValue(':attendance_value', $attendance_value, PDO::PARAM_STR);                
+                $insert_stmt->execute();
 
-            $returnData = msg(1, 200, 'You have successfully deleted this parent.');
+
+            }
+                $returnData = msg(1, 200, 'You have successfully edited this el.');
 
         } catch (PDOException $e) {
             $returnData = msg(0, 500, $e->getMessage());
@@ -76,7 +99,7 @@ else :
     } else {
         return $error_responses->UnAuthorized($isValidToken['message']);
     }
-    
+
 endif;
 
 echo json_encode($returnData);

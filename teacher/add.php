@@ -118,8 +118,10 @@ else :
                     $returnData = msg(0, 422, 'This user already is added!');
                     return $error_responses->BadPayload('This user already is added!');
                 else :
+                    $created_date =  date('Y-m-d');
 
-                    $insert_query = "INSERT INTO `users`( `username`, `password`, `first_name`, `email`, `last_name`, `role`) VALUES(:username,:password,:first_name,:email,:last_name,:role)";
+
+                    $insert_query = "INSERT INTO `users`( `username`, `password`, `first_name`, `email`, `last_name`, `role`,`created_date`) VALUES(:username,:password,:first_name,:email,:last_name,:role,:created_date)";
 
                     $insert_stmt = $conn->prepare($insert_query);
 
@@ -130,6 +132,7 @@ else :
                     $insert_stmt->bindValue(':email', $email, PDO::PARAM_STR);
                     $insert_stmt->bindValue(':last_name', $last_name, PDO::PARAM_STR);
                     $insert_stmt->bindValue(':role', $role, PDO::PARAM_STR);
+                    $insert_stmt->bindValue(':created_date', $created_date, PDO::PARAM_STR);
 
                     $insert_stmt->execute();
 

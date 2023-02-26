@@ -35,34 +35,47 @@ if ($_SERVER["REQUEST_METHOD"] != "GET") :
 elseif (!array_key_exists('Authorization', $allHeaders)) :
     $returnData = msg(0, 401, 'You need token!');
     return $error_responses->UnAuthorized();
-elseif (
-    !isset($_GET['parent_id'])
-    || empty(trim($_GET['parent_id']))
-) :
 
-    $fields = ['fields' => ['parent_id']];
-    $returnData = msg(0, 422, 'Please Fill in all Required Fields!', $fields);
-    return $error_responses->BadPayload('Please Fill in all Required Fields!');
 // IF THERE ARE NO EMPTY FIELDS THEN-
 else :
     $isValidToken = $auth->isValidToken();
     if ($isValidToken['success'] == 1) {
-        $parent_id = $_GET['parent_id'];
+
 
         try {
 
-            $list_query = "SELECT * 
-                            from `parents` 
-                            INNER JOIN `users` 
-                            ON parents.parent_id = $parent_id AND parents.user_id = users.user_id";
-            $query_stmt = $conn->prepare($list_query);
+            $total_schools_query = "SELECT count(*) as totalSchools from `schools`";
+            $query_stmt = $conn->prepare($total_schools_query);
             $query_stmt->execute();
             $row = $query_stmt->fetchALL(PDO::FETCH_ASSOC);
 
+            $total_schools_this_month_query = "SELECT count(*) as totalSchoolsThisMonth from `schools` WHERE MONTH(created_date) = MONTH(now())
+       and YEAR(created_date) = YEAR(now())";
+            $total_schools_this_month_query_stmt = $conn->prepare($total_schools_this_month_query);
+            $total_schools_this_month_query_stmt->execute();
+            $total_schools_this_month_query_stmt_row = $total_schools_this_month_query_stmt->fetchALL(PDO::FETCH_ASSOC);
+
+            $total_admin_users_query = "SELECT count(*) as totalAdminUsers from `users` WHERE role = 2";
+            $query_stmt1 = $conn->prepare($total_admin_users_query);
+            $query_stmt1->execute();
+            $row1 = $query_stmt1->fetchALL(PDO::FETCH_ASSOC);
+
+            $total_admin_users_this_month_query = "SELECT count(*) as totalAdminUsersThisMonth from `users` WHERE role = 2 AND MONTH(created_date) = MONTH(now())
+       and YEAR(created_date) = YEAR(now())";
+            $query_stmt2 = $conn->prepare($total_admin_users_this_month_query);
+            $query_stmt2->execute();
+            $row2 = $query_stmt2->fetchALL(PDO::FETCH_ASSOC);
+
+
             $returnData = [
                     'success' => 1,
-                    'message' => 'You have successfully get parent.',
-                    'data' => $row[0]
+                    'message' => 'You have successfully get user',
+                    'data' => [
+                        'totalSchools'=> $row[0]['totalSchools'],
+                        'totalSchoolsThisMonth'=> $total_schools_this_month_query_stmt_row[0]['totalSchoolsThisMonth'],
+                        'totalAdminUsers' => $row1[0]['totalAdminUsers'],
+                        'totalAdminUsersThisMonth' => $row2[0]['totalAdminUsersThisMonth']
+                    ]
                 ];
 
         } catch (PDOException $e) {

@@ -56,7 +56,7 @@ else :
         $school_id = $_GET['school_id'];
 
         try {
-            $list_query = "SELECT classes.class_name, classes.class_description, classes.year, classes.teacher_id, users.first_name, users.last_name, classes.class_id
+            $list_query = "SELECT classes.class_name, classes.class_description, classes.year, classes.teacher_id,classes.created_date, users.first_name, users.last_name, classes.class_id
                 from ((`classes` 
                 INNER JOIN `teachers` 
                 ON classes.teacher_id = teachers.teacher_id AND classes.school_id=$school_id)
