@@ -48,20 +48,30 @@ else :
 
     $isValidToken = $auth->isValidToken();
     if ($isValidToken['success'] == 1) {
-        $class_id = trim($data->class_id);
 
-        try {
+        $loggedUserRole = $isValidToken['data']['role'];
 
-            $insert_query = "DELETE FROM `classes` WHERE class_id=$class_id";
+        if ($loggedUserRole === 2) {
 
-            $insert_stmt = $conn->prepare($insert_query);
-            $insert_stmt->execute();
+            $class_id = trim($data->class_id);
 
-            $returnData = msg(1, 201, 'You have successfully deleted this class.');
+            try {
 
-        } catch (PDOException $e) {
-            $returnData = msg(0, 500, $e->getMessage());
+                $insert_query = "DELETE FROM `classes` WHERE class_id=$class_id";
+
+                $insert_stmt = $conn->prepare($insert_query);
+                $insert_stmt->execute();
+
+                $returnData = msg(1, 201, 'You have successfully deleted this class.');
+
+            } catch (PDOException $e) {
+                $returnData = msg(0, 500, $e->getMessage());
+            }
+            
+        } else {
+            return $error_responses->RoleNotAllowed();
         }
+
     } else {
         return $error_responses->UnAuthorized($isValidToken['message']);
     }

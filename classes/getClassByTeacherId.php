@@ -47,28 +47,34 @@ elseif (
 else :
     $isValidToken = $auth->isValidToken();
     if ($isValidToken['success'] == 1) {
+        $loggedUserRole = $isValidToken['data']['role'];
 
-        $teacher_id = $_GET['teacher_id'];
+        if ($loggedUserRole === 3 || $loggedUserRole === 2) {
+            $teacher_id = $_GET['teacher_id'];
 
-        try {
+            try {
 
-            $list_query = "SELECT * from `classes` WHERE `teacher_id`=$teacher_id";
-            $query_stmt = $conn->prepare($list_query);
-            $query_stmt->execute();
-            $row = $query_stmt->fetchALL(PDO::FETCH_ASSOC);
+                $list_query = "SELECT * from `classes` WHERE `teacher_id`=$teacher_id";
+                $query_stmt = $conn->prepare($list_query);
+                $query_stmt->execute();
+                $row = $query_stmt->fetchALL(PDO::FETCH_ASSOC);
 
-            $returnData = [
-                    'success' => 1,
-                    'message' => 'You have successfully get class',
-                    'data' => $row
-                ];
+                $returnData = [
+                        'success' => 1,
+                        'message' => 'You have successfully get class',
+                        'data' => $row
+                    ];
 
-        } catch (PDOException $e) {
-            $returnData = msg(0, 500, $e->getMessage());
-            http_response_code(500);
-            echo json_encode(['error'=>$e->getMessage()]);
-            exit;
+            } catch (PDOException $e) {
+                $returnData = msg(0, 500, $e->getMessage());
+                http_response_code(500);
+                echo json_encode(['error'=>$e->getMessage()]);
+                exit;
+            }
+        } else {
+            return $error_responses->RoleNotAllowed();
         }
+
     } else {
         return $error_responses->UnAuthorized($isValidToken['message']);
     }

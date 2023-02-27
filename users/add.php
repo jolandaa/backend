@@ -56,63 +56,73 @@ elseif (
 else :
     $isValidToken = $auth->isValidToken();
     if ($isValidToken['success'] == 1) {
-        $first_name = trim($data->first_name);
-        $last_name = trim($data->last_name);
-        $username = trim($data->username);
-        $password = trim($data->password);
-        $role = trim($data->role);
-        $email = trim($data->email);
 
-        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) :
-            $returnData = msg(0, 422, 'Invalid Email Address!');
-            return $error_responses->BadPayload('Invalid Email Address!');
-        elseif (strlen($username) < 3) :
-            $returnData = msg(0, 422, 'Your username must be at least 3 characters long!');
-            return $error_responses->BadPayload('Invalid Email Address!');
-        else :
+        $loggedUserRole = $isValidToken['data']['role'];
 
-            try {
+        if ($loggedUserRole === 1) {
 
-                $check_email = "SELECT `email` FROM `users` WHERE `email`=:email";
-                $check_email_stmt = $conn->prepare($check_email);
-                $check_email_stmt->bindValue(':email', $email, PDO::PARAM_STR);
-                $check_email_stmt->execute();
+            $first_name = trim($data->first_name);
+            $last_name = trim($data->last_name);
+            $username = trim($data->username);
+            $password = trim($data->password);
+            $role = trim($data->role);
+            $email = trim($data->email);
 
-                if ($check_email_stmt->rowCount()) :
-                    $returnData = msg(0, 422, 'This User already is added!');
-                    return $error_responses->BadPayload('This User already is added!');
+            if (!filter_var($email, FILTER_VALIDATE_EMAIL)) :
+                $returnData = msg(0, 422, 'Invalid Email Address!');
+                return $error_responses->BadPayload('Invalid Email Address!');
+            elseif (strlen($username) < 3) :
+                $returnData = msg(0, 422, 'Your username must be at least 3 characters long!');
+                return $error_responses->BadPayload('Invalid Email Address!');
+            else :
 
-                else :
+                try {
 
-                    $created_date =  date('Y-m-d');
+                    $check_email = "SELECT `email` FROM `users` WHERE `email`=:email";
+                    $check_email_stmt = $conn->prepare($check_email);
+                    $check_email_stmt->bindValue(':email', $email, PDO::PARAM_STR);
+                    $check_email_stmt->execute();
 
-                    $insert_query = "INSERT INTO `users`( `username`, `password`, `first_name`, `email`, `last_name`, `role`, `created_date`) VALUES(:username,:password,:first_name,:email,:last_name,:role, :created_date)";
+                    if ($check_email_stmt->rowCount()) :
+                        $returnData = msg(0, 422, 'This User already is added!');
+                        return $error_responses->BadPayload('This User already is added!');
 
-                    $insert_stmt = $conn->prepare($insert_query);
+                    else :
 
-                    // DATA BINDING
-                    $insert_stmt->bindValue(':username', $username, PDO::PARAM_STR);
-                    $insert_stmt->bindValue(':password', password_hash($password, PASSWORD_DEFAULT), PDO::PARAM_STR);   
-                    $insert_stmt->bindValue(':first_name', $first_name, PDO::PARAM_STR);                             
-                    $insert_stmt->bindValue(':email', $email, PDO::PARAM_STR);
-                    $insert_stmt->bindValue(':last_name', $last_name, PDO::PARAM_STR);
-                    $insert_stmt->bindValue(':role', $role, PDO::PARAM_STR);
-                    $insert_stmt->bindValue(':created_date', $created_date, PDO::PARAM_STR);
+                        $created_date =  date('Y-m-d');
 
-                    $insert_stmt->execute();
+                        $insert_query = "INSERT INTO `users`( `username`, `password`, `first_name`, `email`, `last_name`, `role`, `created_date`) VALUES(:username,:password,:first_name,:email,:last_name,:role, :created_date)";
+
+                        $insert_stmt = $conn->prepare($insert_query);
+
+                        // DATA BINDING
+                        $insert_stmt->bindValue(':username', $username, PDO::PARAM_STR);
+                        $insert_stmt->bindValue(':password', password_hash($password, PASSWORD_DEFAULT), PDO::PARAM_STR);   
+                        $insert_stmt->bindValue(':first_name', $first_name, PDO::PARAM_STR);                             
+                        $insert_stmt->bindValue(':email', $email, PDO::PARAM_STR);
+                        $insert_stmt->bindValue(':last_name', $last_name, PDO::PARAM_STR);
+                        $insert_stmt->bindValue(':role', $role, PDO::PARAM_STR);
+                        $insert_stmt->bindValue(':created_date', $created_date, PDO::PARAM_STR);
+
+                        $insert_stmt->execute();
 
 
-                    $returnData = msg(1, 200, 'You have successfully added this user.');
-                
+                        $returnData = msg(1, 200, 'You have successfully added this user.');
+                    
 
-                endif;
-            } catch (PDOException $e) {
-                $returnData = msg(0, 500, $e->getMessage());
-                http_response_code(500);
-                echo json_encode(['error'=>$e->getMessage()]);
-                exit;
-            }
-        endif;
+                    endif;
+                } catch (PDOException $e) {
+                    $returnData = msg(0, 500, $e->getMessage());
+                    http_response_code(500);
+                    echo json_encode(['error'=>$e->getMessage()]);
+                    exit;
+                }
+            endif;
+
+        } else {
+            return $error_responses->RoleNotAllowed();
+        }
+
     } else {
         return $error_responses->UnAuthorized($isValidToken['message']);
     }

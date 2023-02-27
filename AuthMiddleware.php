@@ -7,6 +7,8 @@ class Auth extends JwtHandler
     protected $headers;
     protected $token;
 
+    public $isSystemAdminRole = false;
+
     public function __construct($db, $headers)
     {
         parent::__construct();
@@ -54,14 +56,20 @@ class Auth extends JwtHandler
         if (array_key_exists('Authorization', $this->headers) && preg_match('/Bearer\s(\S+)/', $this->headers['Authorization'], $matches)) {
 
             $data = $this->jwtDecodeData($matches[1]);
-
             if (
                 isset($data['data']->user_id) &&
                 $user = $this->fetchUser($data['data']->user_id)
             ) :
+                $user_id = $data['data']->user_id;
+                $user_role = $data['data']->role;
+
                 return [
                     "success" => 1,
                     "message" => 'Success',
+                    "data" => [
+                        "user_id" => $user_id,
+                        "role" => $user_role
+                    ]
                 ];
             elseif ($data['message'] == 401) :
                 return [
@@ -81,6 +89,8 @@ class Auth extends JwtHandler
             ];
         }
     }
+
+
 
     protected function fetchUser($user_id)
     {

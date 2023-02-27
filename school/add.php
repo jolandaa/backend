@@ -51,87 +51,97 @@ elseif (
 else :
     $isValidToken = $auth->isValidToken();
     if ($isValidToken['success'] == 1) {
-        $admin_id = trim($data->admin_id);
-        $name = trim($data->name);
-        $description = trim($data->description);
-        $street = null;
-        $country = null;
-        $city = null;
-        $zipCode = null;
-        $logo = null;
-        if (isset($data->street)) $street = trim($data->street);
-        if (isset($data->country)) $country = trim($data->country);
-        if (isset($data->city)) $city = trim($data->city);
-        if (isset($data->zipCode)) $zipCode = trim($data->zipCode);
-        if (isset($data->logo)) $logo = trim($data->logo);
 
-        try {
+        $loggedUserRole = $isValidToken['data']['role'];
 
-            $check_name = "SELECT `name` FROM `schools` WHERE `name`=:name";
-            $check_name_stmt = $conn->prepare($check_name);
-            $check_name_stmt->bindValue(':name', $name, PDO::PARAM_STR);
-            $check_name_stmt->execute();
+        if ($loggedUserRole === 1) {
 
-            if ($check_name_stmt->rowCount()) :
-                $returnData = msg(0, 422, 'This School already is added!');
-                return $error_responses->BadPayload('This School already is added!');
-            else :
+            $admin_id = trim($data->admin_id);
+            $name = trim($data->name);
+            $description = trim($data->description);
+            $street = null;
+            $country = null;
+            $city = null;
+            $zipCode = null;
+            $logo = null;
+            if (isset($data->street)) $street = trim($data->street);
+            if (isset($data->country)) $country = trim($data->country);
+            if (isset($data->city)) $city = trim($data->city);
+            if (isset($data->zipCode)) $zipCode = trim($data->zipCode);
+            if (isset($data->logo)) $logo = trim($data->logo);
 
+            try {
 
-            $check_admin_id = "SELECT `user_id` FROM `users` WHERE `user_id`=$admin_id";
-            $check_admin_id_stmt = $conn->prepare($check_admin_id);
-            $check_admin_id_stmt->execute();
+                $check_name = "SELECT `name` FROM `schools` WHERE `name`=:name";
+                $check_name_stmt = $conn->prepare($check_name);
+                $check_name_stmt->bindValue(':name', $name, PDO::PARAM_STR);
+                $check_name_stmt->execute();
 
-            if ($check_admin_id_stmt->rowCount()) {
+                if ($check_name_stmt->rowCount()) :
+                    $returnData = msg(0, 422, 'This School already is added!');
+                    return $error_responses->BadPayload('This School already is added!');
+                else :
 
 
-                $check_admin = "SELECT * FROM `schools` WHERE `admin_id`=$admin_id";
-                $check_admin_stmt = $conn->prepare($check_admin);
-                $check_admin_stmt->execute();
+                $check_admin_id = "SELECT `user_id` FROM `users` WHERE `user_id`=$admin_id";
+                $check_admin_id_stmt = $conn->prepare($check_admin_id);
+                $check_admin_id_stmt->execute();
 
-                if ($check_admin_stmt->rowCount()) {
-                    $returnData = msg(0, 422, 'This user is already added as admin of another school!');
-                    return $error_responses->BadPayload('This user is already added as admin of another school!');
+                if ($check_admin_id_stmt->rowCount()) {
+
+
+                    $check_admin = "SELECT * FROM `schools` WHERE `admin_id`=$admin_id";
+                    $check_admin_stmt = $conn->prepare($check_admin);
+                    $check_admin_stmt->execute();
+
+                    if ($check_admin_stmt->rowCount()) {
+                        $returnData = msg(0, 422, 'This user is already added as admin of another school!');
+                        return $error_responses->BadPayload('This user is already added as admin of another school!');
+                    } else {
+
+                        $created_date =  date('Y-m-d');
+
+                        $insert_query = "INSERT INTO `schools`( `name`, `description`, `logo`, `street`, `country`, `city`, `zipCode`, `admin_id`, `created_date`) VALUES(:name,:description,:logo,:street,:country,:city,:zipCode,:admin_id, :created_date)";
+
+                        $insert_stmt = $conn->prepare($insert_query);
+
+                        // DATA BINDING
+                        $insert_stmt->bindValue(':admin_id', $admin_id, PDO::PARAM_STR);
+                        $insert_stmt->bindValue(':name', $name, PDO::PARAM_STR);
+                        $insert_stmt->bindValue(':description', $description, PDO::PARAM_STR);
+                        $insert_stmt->bindValue(':street', $street, PDO::PARAM_STR);
+                        $insert_stmt->bindValue(':country', $country, PDO::PARAM_STR);
+                        $insert_stmt->bindValue(':city', $city, PDO::PARAM_STR);
+                        $insert_stmt->bindValue(':zipCode', $zipCode, PDO::PARAM_STR);
+                        $insert_stmt->bindValue(':logo', $logo, PDO::PARAM_STR);
+                        $insert_stmt->bindValue(':created_date', $created_date, PDO::PARAM_STR);
+
+                        $insert_stmt->execute();
+
+
+                        $returnData = msg(1, 200, 'You have successfully added this school.'); 
+                    }
+
+
+
                 } else {
-
-                    $created_date =  date('Y-m-d');
-
-                    $insert_query = "INSERT INTO `schools`( `name`, `description`, `logo`, `street`, `country`, `city`, `zipCode`, `admin_id`, `created_date`) VALUES(:name,:description,:logo,:street,:country,:city,:zipCode,:admin_id, :created_date)";
-
-                    $insert_stmt = $conn->prepare($insert_query);
-
-                    // DATA BINDING
-                    $insert_stmt->bindValue(':admin_id', $admin_id, PDO::PARAM_STR);
-                    $insert_stmt->bindValue(':name', $name, PDO::PARAM_STR);
-                    $insert_stmt->bindValue(':description', $description, PDO::PARAM_STR);
-                    $insert_stmt->bindValue(':street', $street, PDO::PARAM_STR);
-                    $insert_stmt->bindValue(':country', $country, PDO::PARAM_STR);
-                    $insert_stmt->bindValue(':city', $city, PDO::PARAM_STR);
-                    $insert_stmt->bindValue(':zipCode', $zipCode, PDO::PARAM_STR);
-                    $insert_stmt->bindValue(':logo', $logo, PDO::PARAM_STR);
-                    $insert_stmt->bindValue(':created_date', $created_date, PDO::PARAM_STR);
-
-                    $insert_stmt->execute();
-
-
-                    $returnData = msg(1, 200, 'You have successfully added this school.'); 
+                    $returnData = msg(0, 422, 'You should choose a valid user id for school administration.');
+                    return $error_responses->BadPayload('You should choose a valid user id for school administration.');
                 }
 
 
-
-            } else {
-                $returnData = msg(0, 422, 'You should choose a valid user id for school administration.');
-                return $error_responses->BadPayload('You should choose a valid user id for school administration.');
+                endif;
+            } catch (PDOException $e) {
+                $returnData = msg(0, 500, $e->getMessage());
+                http_response_code(500);
+                echo json_encode(['error'=>$e->getMessage()]);
+                exit;
             }
 
-
-            endif;
-        } catch (PDOException $e) {
-            $returnData = msg(0, 500, $e->getMessage());
-            http_response_code(500);
-            echo json_encode(['error'=>$e->getMessage()]);
-            exit;
+        } else {
+            return $error_responses->RoleNotAllowed();
         }
+
     } else {
         return $error_responses->UnAuthorized($isValidToken['message']);
     }

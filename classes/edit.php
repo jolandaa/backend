@@ -55,47 +55,56 @@ else :
     $isValidToken = $auth->isValidToken();
     if ($isValidToken['success'] == 1) {
 
-        $class_id = trim($data->class_id);
-        $class_name = trim($data->name);
-        $class_description = trim($data->description);
-        $year = trim($data->year);
+        $loggedUserRole = $isValidToken['data']['role'];
+
+        if ($loggedUserRole === 2) {
+
+            $class_id = trim($data->class_id);
+            $class_name = trim($data->name);
+            $class_description = trim($data->description);
+            $year = trim($data->year);
 
 
-        try {
+            try {
 
-            $check_name = "SELECT `class_name` FROM `classes` WHERE `class_name`=:class_name AND class_id != $class_id";
-            $check_name_stmt = $conn->prepare($check_name);
-            $check_name_stmt->bindValue(':class_name', $class_name, PDO::PARAM_STR);
-            $check_name_stmt->execute();
+                $check_name = "SELECT `class_name` FROM `classes` WHERE `class_name`=:class_name AND class_id != $class_id";
+                $check_name_stmt = $conn->prepare($check_name);
+                $check_name_stmt->bindValue(':class_name', $class_name, PDO::PARAM_STR);
+                $check_name_stmt->execute();
 
-            if ($check_name_stmt->rowCount()) :
-                $returnData = msg(0, 422, 'This Class already is added!');
+                if ($check_name_stmt->rowCount()) :
+                    $returnData = msg(0, 422, 'This Class already is added!');
 
-            else :
-                $insert_query = "UPDATE `classes` SET 
-                    class_name = :class_name, 
-                    class_description = :class_description, 
-                    year = :year WHERE class_id=$class_id";
+                else :
+                    $insert_query = "UPDATE `classes` SET 
+                        class_name = :class_name, 
+                        class_description = :class_description, 
+                        year = :year WHERE class_id=$class_id";
 
-                $insert_stmt = $conn->prepare($insert_query);
+                    $insert_stmt = $conn->prepare($insert_query);
 
-                // DATA BINDING
-                $insert_stmt->bindValue(':class_name', $class_name, PDO::PARAM_STR);
-                $insert_stmt->bindValue(':class_description', $class_description, PDO::PARAM_STR);
-                $insert_stmt->bindValue(':year', $year, PDO::PARAM_STR);
+                    // DATA BINDING
+                    $insert_stmt->bindValue(':class_name', $class_name, PDO::PARAM_STR);
+                    $insert_stmt->bindValue(':class_description', $class_description, PDO::PARAM_STR);
+                    $insert_stmt->bindValue(':year', $year, PDO::PARAM_STR);
 
-                $insert_stmt->execute();
+                    $insert_stmt->execute();
 
-                $returnData = msg(1, 201, 'You have successfully edited this school.');
+                    $returnData = msg(1, 201, 'You have successfully edited this school.');
 
-            endif;
-        } catch (PDOException $e) {
-            $returnData = msg(0, 500, $e->getMessage());
-            $returnData = msg(0, 500, $e->getMessage());
-            http_response_code(500);
-            echo json_encode(['error'=>$e->getMessage()]);
-            exit;
+                endif;
+            } catch (PDOException $e) {
+                $returnData = msg(0, 500, $e->getMessage());
+                $returnData = msg(0, 500, $e->getMessage());
+                http_response_code(500);
+                echo json_encode(['error'=>$e->getMessage()]);
+                exit;
+            }
+        
+        } else {
+            return $error_responses->RoleNotAllowed();
         }
+
     } else {
         return $error_responses->UnAuthorized($isValidToken['message']);
     }

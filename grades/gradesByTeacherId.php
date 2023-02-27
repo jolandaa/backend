@@ -47,32 +47,39 @@ elseif (
 else :
     $isValidToken = $auth->isValidToken();
     if ($isValidToken['success'] == 1) {
-        $teacher_id = $_GET['teacher_id'];
+        $loggedUserRole = $isValidToken['data']['role'];
 
-        try {
+        if ($loggedUserRole === 3) {
+            $teacher_id = $_GET['teacher_id'];
 
-            $list_query = "SELECT * 
-                            from `grades` 
-                            INNER JOIN `classes` 
-                            ON classes.class_id = grades.class_id AND grades.teacher_id = $teacher_id
-                            INNER JOIN `students`
-                            ON grades.student_id = students.nr_amzes";
-            $query_stmt = $conn->prepare($list_query);
-            $query_stmt->execute();
-            $row = $query_stmt->fetchALL(PDO::FETCH_ASSOC);
+            try {
 
-            $returnData = [
-                    'success' => 1,
-                    'message' => 'You have successfully get grades.',
-                    'data' => $row
-                ];
+                $list_query = "SELECT * 
+                                from `grades` 
+                                INNER JOIN `classes` 
+                                ON classes.class_id = grades.class_id AND grades.teacher_id = $teacher_id
+                                INNER JOIN `students`
+                                ON grades.student_id = students.nr_amzes";
+                $query_stmt = $conn->prepare($list_query);
+                $query_stmt->execute();
+                $row = $query_stmt->fetchALL(PDO::FETCH_ASSOC);
 
-        } catch (PDOException $e) {
-            $returnData = msg(0, 500, $e->getMessage());
-            http_response_code(500);
-            echo json_encode(['error'=>$e->getMessage()]);
-            exit;
+                $returnData = [
+                        'success' => 1,
+                        'message' => 'You have successfully get grades.',
+                        'data' => $row
+                    ];
+
+            } catch (PDOException $e) {
+                $returnData = msg(0, 500, $e->getMessage());
+                http_response_code(500);
+                echo json_encode(['error'=>$e->getMessage()]);
+                exit;
+            }
+        } else {
+            return $error_responses->RoleNotAllowed();
         }
+
     } else {
         return $error_responses->UnAuthorized($isValidToken['message']);
     }

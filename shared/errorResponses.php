@@ -25,4 +25,10 @@ class ErrorResponses{
         echo json_encode(['error'=>$msg]);
         exit;
     }
+
+    public function RoleNotAllowed($msg='You are not allowed to access this page'){
+        http_response_code(403);
+        echo json_encode(['error'=>$msg]);
+        exit;
+    }    
 }

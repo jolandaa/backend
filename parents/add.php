@@ -60,86 +60,94 @@ else :
 
     $isValidToken = $auth->isValidToken();
     if ($isValidToken['success'] == 1) {
-        $school_id = trim($data->school_id);
-        $first_name = trim($data->first_name);
-        $last_name = trim($data->last_name);
-        $username = trim($data->username);
-        $password = trim($data->password);
-        $role = trim($data->role);
-        $email = trim($data->email);
+        $loggedUserRole = $isValidToken['data']['role'];
 
-        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) :
-            $returnData = msg(0, 422, 'Invalid Email Address!');
-            return $error_responses->BadPayload('Invalid Email Address!');
-        elseif (strlen($username) < 3) :
-            $returnData = msg(0, 422, 'Your username must be at least 3 characters long!');
-            return $error_responses->BadPayload('Your username must be at least 3 characters long!');
-        else :
-            try {
+        if ($loggedUserRole === 2) {
+            
+            $school_id = trim($data->school_id);
+            $first_name = trim($data->first_name);
+            $last_name = trim($data->last_name);
+            $username = trim($data->username);
+            $password = trim($data->password);
+            $role = trim($data->role);
+            $email = trim($data->email);
 
-                $check_name = "SELECT `email` FROM `users` WHERE `email`=:email";
-                $check_name_stmt = $conn->prepare($check_name);
-                $check_name_stmt->bindValue(':email', $email, PDO::PARAM_STR);
-                $check_name_stmt->execute();
+            if (!filter_var($email, FILTER_VALIDATE_EMAIL)) :
+                $returnData = msg(0, 422, 'Invalid Email Address!');
+                return $error_responses->BadPayload('Invalid Email Address!');
+            elseif (strlen($username) < 3) :
+                $returnData = msg(0, 422, 'Your username must be at least 3 characters long!');
+                return $error_responses->BadPayload('Your username must be at least 3 characters long!');
+            else :
+                try {
 
-                if ($check_name_stmt->rowCount()) :
-                    $returnData = msg(0, 422, 'This user already is added!');
-                    return $error_responses->BadPayload('This user already is added!');
-                else :
-                    $created_date =  date('Y-m-d');
+                    $check_name = "SELECT `email` FROM `users` WHERE `email`=:email";
+                    $check_name_stmt = $conn->prepare($check_name);
+                    $check_name_stmt->bindValue(':email', $email, PDO::PARAM_STR);
+                    $check_name_stmt->execute();
 
-                    $insert_query = "INSERT INTO `users`( `username`, `password`, `first_name`, `email`, `last_name`, `role`,`created_date`) VALUES(:username,:password,:first_name,:email,:last_name,:role,:created_date)";
+                    if ($check_name_stmt->rowCount()) :
+                        $returnData = msg(0, 422, 'This user already is added!');
+                        return $error_responses->BadPayload('This user already is added!');
+                    else :
+                        $created_date =  date('Y-m-d');
 
-                    $insert_stmt = $conn->prepare($insert_query);
+                        $insert_query = "INSERT INTO `users`( `username`, `password`, `first_name`, `email`, `last_name`, `role`,`created_date`) VALUES(:username,:password,:first_name,:email,:last_name,:role,:created_date)";
 
-                    // DATA BINDING
-                    $insert_stmt->bindValue(':username', $username, PDO::PARAM_STR);
-                    $insert_stmt->bindValue(':password', password_hash($password, PASSWORD_DEFAULT), PDO::PARAM_STR);   
-                    $insert_stmt->bindValue(':first_name', $first_name, PDO::PARAM_STR);
-                    $insert_stmt->bindValue(':email', $email, PDO::PARAM_STR);
-                    $insert_stmt->bindValue(':last_name', $last_name, PDO::PARAM_STR);
-                    $insert_stmt->bindValue(':role', $role, PDO::PARAM_STR);
-                    $insert_stmt->bindValue(':created_date', $created_date, PDO::PARAM_STR);
+                        $insert_stmt = $conn->prepare($insert_query);
 
-                    $insert_stmt->execute();
+                        // DATA BINDING
+                        $insert_stmt->bindValue(':username', $username, PDO::PARAM_STR);
+                        $insert_stmt->bindValue(':password', password_hash($password, PASSWORD_DEFAULT), PDO::PARAM_STR);   
+                        $insert_stmt->bindValue(':first_name', $first_name, PDO::PARAM_STR);
+                        $insert_stmt->bindValue(':email', $email, PDO::PARAM_STR);
+                        $insert_stmt->bindValue(':last_name', $last_name, PDO::PARAM_STR);
+                        $insert_stmt->bindValue(':role', $role, PDO::PARAM_STR);
+                        $insert_stmt->bindValue(':created_date', $created_date, PDO::PARAM_STR);
 
-                    if ($insert_stmt->rowCount()) {
+                        $insert_stmt->execute();
 
-                        $select_query = "SELECT * FROM `users` WHERE `email`=:email";
-                        $check_email_stmt = $conn->prepare($select_query);
-                        $check_email_stmt->bindValue(':email', $email, PDO::PARAM_STR);
-                        $check_email_stmt->execute();
+                        if ($insert_stmt->rowCount()) {
 
-                        if ($check_email_stmt->rowCount()) :
+                            $select_query = "SELECT * FROM `users` WHERE `email`=:email";
+                            $check_email_stmt = $conn->prepare($select_query);
+                            $check_email_stmt->bindValue(':email', $email, PDO::PARAM_STR);
+                            $check_email_stmt->execute();
 
-                            $check_email_stmt_row = $check_email_stmt->fetchALL(PDO::FETCH_ASSOC);
-                            $user_id = $check_email_stmt_row[0]['user_id'];
+                            if ($check_email_stmt->rowCount()) :
 
-                            $insert_teacher_query = "INSERT INTO `parents`( `user_id`, `school_id`) VALUES(:user_id,:school_id)";
-                            $insert_teacher_stmt = $conn->prepare($insert_teacher_query);
+                                $check_email_stmt_row = $check_email_stmt->fetchALL(PDO::FETCH_ASSOC);
+                                $user_id = $check_email_stmt_row[0]['user_id'];
 
-                            // DATA BINDING
-                            $insert_teacher_stmt->bindValue(':user_id', $user_id, PDO::PARAM_STR);
-                            $insert_teacher_stmt->bindValue(':school_id', $school_id, PDO::PARAM_STR);
+                                $insert_teacher_query = "INSERT INTO `parents`( `user_id`, `school_id`) VALUES(:user_id,:school_id)";
+                                $insert_teacher_stmt = $conn->prepare($insert_teacher_query);
 
-                            $insert_teacher_stmt->execute();
+                                // DATA BINDING
+                                $insert_teacher_stmt->bindValue(':user_id', $user_id, PDO::PARAM_STR);
+                                $insert_teacher_stmt->bindValue(':school_id', $school_id, PDO::PARAM_STR);
 
-                            $returnData = msg(1, 200, 'You have successfully added this parent.');
+                                $insert_teacher_stmt->execute();
 
-                        endif;
-                    } else {
-                        $returnData = msg(0, 400, 'Error');
-                        return $error_responses->BadPayload('Error');
-                    }
+                                $returnData = msg(1, 200, 'You have successfully added this parent.');
 
-                endif;
-            } catch (PDOException $e) {
-                $returnData = msg(0, 500, $e->getMessage());
-                http_response_code(500);
-                echo json_encode(['error'=>$e->getMessage()]);
-                exit;
-            }
-        endif;
+                            endif;
+                        } else {
+                            $returnData = msg(0, 400, 'Error');
+                            return $error_responses->BadPayload('Error');
+                        }
+
+                    endif;
+                } catch (PDOException $e) {
+                    $returnData = msg(0, 500, $e->getMessage());
+                    http_response_code(500);
+                    echo json_encode(['error'=>$e->getMessage()]);
+                    exit;
+                }
+            endif;
+        } else {
+            return $error_responses->RoleNotAllowed();
+        }
+
     } else {
         return $error_responses->UnAuthorized($isValidToken['message']);
     }

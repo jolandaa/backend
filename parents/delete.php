@@ -50,29 +50,39 @@ elseif (
 else :
     $isValidToken = $auth->isValidToken();
     if ($isValidToken['success'] == 1) {
-        $parent_id = trim($data->parent_id);
-        $user_id = trim($data->user_id);
 
-        try {
+        $loggedUserRole = $isValidToken['data']['role'];
 
-            $delete_parent_query = "DELETE FROM `parents` WHERE parent_id=$parent_id";
+        if ($loggedUserRole === 2) {
 
-            $delete_parent_stmt = $conn->prepare($delete_parent_query);
-            $delete_parent_stmt->execute();
+            $parent_id = trim($data->parent_id);
+            $user_id = trim($data->user_id);
 
-            $delete_user_query = "DELETE FROM `users` WHERE user_id=$user_id";
+            try {
 
-            $elete_user_stmt = $conn->prepare($delete_user_query);
-            $elete_user_stmt->execute();
+                $delete_parent_query = "DELETE FROM `parents` WHERE parent_id=$parent_id";
 
-            $returnData = msg(1, 200, 'You have successfully deleted this parent.');
+                $delete_parent_stmt = $conn->prepare($delete_parent_query);
+                $delete_parent_stmt->execute();
 
-        } catch (PDOException $e) {
-            $returnData = msg(0, 500, $e->getMessage());
-            http_response_code(500);
-            echo json_encode(['error'=>$e->getMessage()]);
-            exit;
+                $delete_user_query = "DELETE FROM `users` WHERE user_id=$user_id";
+
+                $elete_user_stmt = $conn->prepare($delete_user_query);
+                $elete_user_stmt->execute();
+
+                $returnData = msg(1, 200, 'You have successfully deleted this parent.');
+
+            } catch (PDOException $e) {
+                $returnData = msg(0, 500, $e->getMessage());
+                http_response_code(500);
+                echo json_encode(['error'=>$e->getMessage()]);
+                exit;
+            }
+        
+        } else {
+            return $error_responses->RoleNotAllowed();
         }
+
     } else {
         return $error_responses->UnAuthorized($isValidToken['message']);
     }

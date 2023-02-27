@@ -53,47 +53,57 @@ elseif (
 else :
     $isValidToken = $auth->isValidToken();
     if ($isValidToken['success'] == 1) {
-        $user_id = trim($data->user_id);
-        $first_name = trim($data->first_name);
-        $last_name = trim($data->last_name);
-        $email = trim($data->email);
+
+        $loggedUserRole = $isValidToken['data']['role'];
+
+        if ($loggedUserRole === 1) {
+
+            $user_id = trim($data->user_id);
+            $first_name = trim($data->first_name);
+            $last_name = trim($data->last_name);
+            $email = trim($data->email);
 
 
-        try {
+            try {
 
-            $check_email = "SELECT `email` FROM `users` WHERE `email`=:email AND user_id != $user_id";
-            $check_email_stmt = $conn->prepare($check_email);
-            $check_email_stmt->bindValue(':email', $email, PDO::PARAM_STR);
-            $check_email_stmt->execute();
+                $check_email = "SELECT `email` FROM `users` WHERE `email`=:email AND user_id != $user_id";
+                $check_email_stmt = $conn->prepare($check_email);
+                $check_email_stmt->bindValue(':email', $email, PDO::PARAM_STR);
+                $check_email_stmt->execute();
 
-            if ($check_email_stmt->rowCount()) :
-                $returnData = msg(0, 422, 'This User already is added!');
-                return $error_responses->BadPayload('This User already is added!');
+                if ($check_email_stmt->rowCount()) :
+                    $returnData = msg(0, 422, 'This User already is added!');
+                    return $error_responses->BadPayload('This User already is added!');
 
-            else :
-                $insert_query = "UPDATE `users` SET 
-                    first_name = :first_name, 
-                    last_name = :last_name, 
-                    email = :email WHERE user_id=$user_id";
+                else :
+                    $insert_query = "UPDATE `users` SET 
+                        first_name = :first_name, 
+                        last_name = :last_name, 
+                        email = :email WHERE user_id=$user_id";
 
-                $insert_stmt = $conn->prepare($insert_query);
+                    $insert_stmt = $conn->prepare($insert_query);
 
-                // DATA BINDING
-                $insert_stmt->bindValue(':first_name', $first_name, PDO::PARAM_STR);
-                $insert_stmt->bindValue(':last_name', $last_name, PDO::PARAM_STR);
-                $insert_stmt->bindValue(':email', $email, PDO::PARAM_STR);
+                    // DATA BINDING
+                    $insert_stmt->bindValue(':first_name', $first_name, PDO::PARAM_STR);
+                    $insert_stmt->bindValue(':last_name', $last_name, PDO::PARAM_STR);
+                    $insert_stmt->bindValue(':email', $email, PDO::PARAM_STR);
 
-                $insert_stmt->execute();
+                    $insert_stmt->execute();
 
-                $returnData = msg(1, 200, 'You have successfully edited this user.');
+                    $returnData = msg(1, 200, 'You have successfully edited this user.');
 
-            endif;
-        } catch (PDOException $e) {
-            $returnData = msg(0, 500, $e->getMessage());
-            http_response_code(500);
-            echo json_encode(['error'=>$e->getMessage()]);
-            exit;
+                endif;
+            } catch (PDOException $e) {
+                $returnData = msg(0, 500, $e->getMessage());
+                http_response_code(500);
+                echo json_encode(['error'=>$e->getMessage()]);
+                exit;
+            }
+        
+        } else {
+            return $error_responses->RoleNotAllowed();
         }
+
     } else {
         return $error_responses->UnAuthorized($isValidToken['message']);
     }

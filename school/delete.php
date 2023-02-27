@@ -48,23 +48,33 @@ elseif (
 else :
     $isValidToken = $auth->isValidToken();
     if ($isValidToken['success'] == 1) {
-        $school_id = trim($data->school_id);
 
-        try {
+        $loggedUserRole = $isValidToken['data']['role'];
 
-            $insert_query = "DELETE FROM `schools` WHERE school_id=$school_id";
+        if ($loggedUserRole === 1) {
 
-            $insert_stmt = $conn->prepare($insert_query);
-            $insert_stmt->execute();
+            $school_id = trim($data->school_id);
 
-            $returnData = msg(1, 200, 'You have successfully deleted this school.');
+            try {
 
-        } catch (PDOException $e) {
-            $returnData = msg(0, 500, $e->getMessage());
-            http_response_code(500);
-            echo json_encode(['error'=>$e->getMessage()]);
-            exit;
+                $insert_query = "DELETE FROM `schools` WHERE school_id=$school_id";
+
+                $insert_stmt = $conn->prepare($insert_query);
+                $insert_stmt->execute();
+
+                $returnData = msg(1, 200, 'You have successfully deleted this school.');
+
+            } catch (PDOException $e) {
+                $returnData = msg(0, 500, $e->getMessage());
+                http_response_code(500);
+                echo json_encode(['error'=>$e->getMessage()]);
+                exit;
+            }
+        
+        } else {
+            return $error_responses->RoleNotAllowed();
         }
+
     } else {
         return $error_responses->UnAuthorized($isValidToken['message']);
     }

@@ -48,49 +48,60 @@ elseif (
 else :
     $isValidToken = $auth->isValidToken();
     if ($isValidToken['success'] == 1) {
-        $user_id = trim($data->user_id);
 
-        try {
+        $loggedUserRole = $isValidToken['data']['role'];
 
-            $school_admin_list = "SELECT * FROM `schools` WHERE admin_id=$user_id";
+        if ($loggedUserRole === 1) {
 
-            $school_admin_list_stmt = $conn->prepare($school_admin_list);
-            $school_admin_list_stmt->execute();
-            $row = $school_admin_list_stmt->fetchALL(PDO::FETCH_ASSOC);
+            $user_id = trim($data->user_id);
 
-            $disableForeignKeyChecks = "set FOREIGN_KEY_CHECKS=0";
+            try {
 
+                $school_admin_list = "SELECT * FROM `schools` WHERE admin_id=$user_id";
 
-            $disableForeignKeyChecks_stmt = $conn->prepare($disableForeignKeyChecks);
-            $disableForeignKeyChecks_stmt->execute();
+                $school_admin_list_stmt = $conn->prepare($school_admin_list);
+                $school_admin_list_stmt->execute();
+                $row = $school_admin_list_stmt->fetchALL(PDO::FETCH_ASSOC);
 
-            if ($school_admin_list_stmt->rowCount()) :
-
-                $delete_school = "DELETE FROM `schools` WHERE admin_id=$user_id";
-
-                $delete_school_stmt = $conn->prepare($delete_school);
-                $delete_school_stmt->execute();
-            endif;
-
-            $delete_user = "DELETE FROM `users` WHERE user_id=$user_id";
-
-            $delete_user_stmt = $conn->prepare($delete_user);
-            $delete_user_stmt->execute();
-
-            $returnData = msg(1, 200, 'You have successfully deleted this user.');
-
-            $enableForeignKeyChecks = "set FOREIGN_KEY_CHECKS=1";
+                $disableForeignKeyChecks = "set FOREIGN_KEY_CHECKS=0";
 
 
-            $enableForeignKeyChecks_stmt = $conn->prepare($enableForeignKeyChecks);
-            $enableForeignKeyChecks_stmt->execute();
+                $disableForeignKeyChecks_stmt = $conn->prepare($disableForeignKeyChecks);
+                $disableForeignKeyChecks_stmt->execute();
 
-        } catch (PDOException $e) {
-            $returnData = msg(0, 500, $e->getMessage());
-            http_response_code(500);
-            echo json_encode(['error'=>$e->getMessage()]);
-            exit;
+                if ($school_admin_list_stmt->rowCount()) :
+
+                    $delete_school = "DELETE FROM `schools` WHERE admin_id=$user_id";
+
+                    $delete_school_stmt = $conn->prepare($delete_school);
+                    $delete_school_stmt->execute();
+                endif;
+
+                $delete_user = "DELETE FROM `users` WHERE user_id=$user_id";
+
+                $delete_user_stmt = $conn->prepare($delete_user);
+                $delete_user_stmt->execute();
+
+                $returnData = msg(1, 200, 'You have successfully deleted this user.');
+
+                $enableForeignKeyChecks = "set FOREIGN_KEY_CHECKS=1";
+
+
+                $enableForeignKeyChecks_stmt = $conn->prepare($enableForeignKeyChecks);
+                $enableForeignKeyChecks_stmt->execute();
+
+            } catch (PDOException $e) {
+                $returnData = msg(0, 500, $e->getMessage());
+                http_response_code(500);
+                echo json_encode(['error'=>$e->getMessage()]);
+                exit;
+            }
+        
+        } else {
+            return $error_responses->RoleNotAllowed();
         }
+
+
     } else {
         return $error_responses->UnAuthorized($isValidToken['message']);
     }

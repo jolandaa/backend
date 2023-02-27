@@ -48,23 +48,33 @@ elseif (
 else :
     $isValidToken = $auth->isValidToken();
     if ($isValidToken['success'] == 1) {
-        $nr_amzes = trim($data->nr_amzes);
 
-        try {
+        $loggedUserRole = $isValidToken['data']['role'];
 
-            $delete_student_query = "DELETE FROM `students` WHERE nr_amzes=$nr_amzes";
+        if ($loggedUserRole === 2) {
 
-            $delete_student_stmt = $conn->prepare($delete_student_query);
-            $delete_student_stmt->execute();
+            $nr_amzes = trim($data->nr_amzes);
 
-            $returnData = msg(1, 200, 'You have successfully deleted this student.');
+            try {
 
-        } catch (PDOException $e) {
-            $returnData = msg(0, 500, $e->getMessage());
-            http_response_code(500);
-            echo json_encode(['error'=>$e->getMessage()]);
-            exit;
+                $delete_student_query = "DELETE FROM `students` WHERE nr_amzes=$nr_amzes";
+
+                $delete_student_stmt = $conn->prepare($delete_student_query);
+                $delete_student_stmt->execute();
+
+                $returnData = msg(1, 200, 'You have successfully deleted this student.');
+
+            } catch (PDOException $e) {
+                $returnData = msg(0, 500, $e->getMessage());
+                http_response_code(500);
+                echo json_encode(['error'=>$e->getMessage()]);
+                exit;
+            }
+        
+        } else {
+            return $error_responses->RoleNotAllowed();
         }
+
     } else {
         return $error_responses->UnAuthorized($isValidToken['message']);
     }

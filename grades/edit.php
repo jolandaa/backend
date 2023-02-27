@@ -54,48 +54,55 @@ else :
 
     $isValidToken = $auth->isValidToken();
     if ($isValidToken['success'] == 1) {
-        $teacher_id = trim($data->teacher_id);
-        $class_id = trim($data->class_id);
-        $date = trim($data->date);
-        $attendanceList = $data->attendanceList;
-        $status = 2;
+        $loggedUserRole = $isValidToken['data']['role'];
 
-        if (isset($data->status)) {
-            $status = $data->status;
-        }
+        if ($loggedUserRole === 3) {
+            $teacher_id = trim($data->teacher_id);
+            $class_id = trim($data->class_id);
+            $date = trim($data->date);
+            $attendanceList = $data->attendanceList;
+            $status = 2;
 
-
-        try {
-
-            for ($i=0; $i < count($attendanceList); $i++) { 
-                $student_id = $attendanceList[$i]->nr_amzes;
-                $grade_id = $attendanceList[$i]->grade_id;
-                $grade = $attendanceList[$i]->grade;
-                $status = $attendanceList[$i]->status;
-
-                $insert_query = "UPDATE `grades` SET 
-                    status = :status, 
-                    student_id = :student_id, 
-                    grade = :grade WHERE grade_id=$grade_id ";
-
-                $insert_stmt = $conn->prepare($insert_query);
-
-                // DATA BINDING
-                $insert_stmt->bindValue(':status', $status, PDO::PARAM_STR);
-                $insert_stmt->bindValue(':student_id', $student_id, PDO::PARAM_STR);
-                $insert_stmt->bindValue(':grade', $grade, PDO::PARAM_STR);                
-                $insert_stmt->execute();
-
-
+            if (isset($data->status)) {
+                $status = $data->status;
             }
-                $returnData = msg(1, 200, 'You have successfully edited this grade.');
 
-        } catch (PDOException $e) {
-            $returnData = msg(0, 500, $e->getMessage());
-            http_response_code(500);
-            echo json_encode(['error'=>$e->getMessage()]);
-            exit;
+
+            try {
+
+                for ($i=0; $i < count($attendanceList); $i++) { 
+                    $student_id = $attendanceList[$i]->nr_amzes;
+                    $grade_id = $attendanceList[$i]->grade_id;
+                    $grade = $attendanceList[$i]->grade;
+                    $status = $attendanceList[$i]->status;
+
+                    $insert_query = "UPDATE `grades` SET 
+                        status = :status, 
+                        student_id = :student_id, 
+                        grade = :grade WHERE grade_id=$grade_id ";
+
+                    $insert_stmt = $conn->prepare($insert_query);
+
+                    // DATA BINDING
+                    $insert_stmt->bindValue(':status', $status, PDO::PARAM_STR);
+                    $insert_stmt->bindValue(':student_id', $student_id, PDO::PARAM_STR);
+                    $insert_stmt->bindValue(':grade', $grade, PDO::PARAM_STR);                
+                    $insert_stmt->execute();
+
+
+                }
+                    $returnData = msg(1, 200, 'You have successfully edited this grade.');
+
+            } catch (PDOException $e) {
+                $returnData = msg(0, 500, $e->getMessage());
+                http_response_code(500);
+                echo json_encode(['error'=>$e->getMessage()]);
+                exit;
+            }
+        } else {
+            return $error_responses->RoleNotAllowed();
         }
+
     } else {
         return $error_responses->UnAuthorized($isValidToken['message']);
     }

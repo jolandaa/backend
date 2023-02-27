@@ -49,39 +49,44 @@ elseif (
 else :
     $isValidToken = $auth->isValidToken();
     if ($isValidToken['success'] == 1) {
-
-        $parent_id = $_GET['parent_id'];
-
-
-        try {
-
-            $total_students_query = "SELECT count(*) as totalStudents from `students` WHERE parent_id = $parent_id";
-            $query_stmt = $conn->prepare($total_students_query);
-            $query_stmt->execute();
-            $row = $query_stmt->fetchALL(PDO::FETCH_ASSOC);
-
-            $total_students_this_month_query = "SELECT count(*) as totalStudentsThisMonth from `students` WHERE MONTH(created_date) = MONTH(now())
-       and YEAR(created_date) = YEAR(now()) AND parent_id = $parent_id";
-            $query_stmt1 = $conn->prepare($total_students_this_month_query);
-            $query_stmt1->execute();
-            $row1 = $query_stmt1->fetchALL(PDO::FETCH_ASSOC);
+        $loggedUserRole = $isValidToken['data']['role'];
+        if ($loggedUserRole === 2) {
+            $parent_id = $_GET['parent_id'];
 
 
-            $returnData = [
-                    'success' => 1,
-                    'message' => 'You have successfully get user',
-                    'data' => [
-                        'totalStudents'=> $row[0]['totalStudents'],
-                        'totalStudentsThisMonth'=> $row1[0]['totalStudentsThisMonth']
-                    ]
-                ];
+            try {
 
-        } catch (PDOException $e) {
-            $returnData = msg(0, 500, $e->getMessage());
-            http_response_code(500);
-            echo json_encode(['error'=>$e->getMessage()]);
-            exit;
+                $total_students_query = "SELECT count(*) as totalStudents from `students` WHERE parent_id = $parent_id";
+                $query_stmt = $conn->prepare($total_students_query);
+                $query_stmt->execute();
+                $row = $query_stmt->fetchALL(PDO::FETCH_ASSOC);
+
+                $total_students_this_month_query = "SELECT count(*) as totalStudentsThisMonth from `students` WHERE MONTH(created_date) = MONTH(now())
+                and YEAR(created_date) = YEAR(now()) AND parent_id = $parent_id";
+                $query_stmt1 = $conn->prepare($total_students_this_month_query);
+                $query_stmt1->execute();
+                $row1 = $query_stmt1->fetchALL(PDO::FETCH_ASSOC);
+
+
+                $returnData = [
+                        'success' => 1,
+                        'message' => 'You have successfully get user',
+                        'data' => [
+                            'totalStudents'=> $row[0]['totalStudents'],
+                            'totalStudentsThisMonth'=> $row1[0]['totalStudentsThisMonth']
+                        ]
+                    ];
+
+            } catch (PDOException $e) {
+                $returnData = msg(0, 500, $e->getMessage());
+                http_response_code(500);
+                echo json_encode(['error'=>$e->getMessage()]);
+                exit;
+            }            
+        } else {
+            return $error_responses->RoleNotAllowed();
         }
+
     } else {
         return $error_responses->UnAuthorized($isValidToken['message']);
     }

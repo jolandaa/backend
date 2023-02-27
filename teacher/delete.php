@@ -50,29 +50,39 @@ elseif (
 else :
     $isValidToken = $auth->isValidToken();
     if ($isValidToken['success'] == 1) {
-        $teacher_id = trim($data->teacher_id);
-        $user_id = trim($data->user_id);
 
-        try {
+        $loggedUserRole = $isValidToken['data']['role'];
 
-            $delete_teacher_query = "DELETE FROM `teachers` WHERE teacher_id=$teacher_id";
+        if ($loggedUserRole === 2) {
 
-            $delete_teacher_stmt = $conn->prepare($delete_teacher_query);
-            $delete_teacher_stmt->execute();
+            $teacher_id = trim($data->teacher_id);
+            $user_id = trim($data->user_id);
 
-            $delete_user_query = "DELETE FROM `users` WHERE user_id=$user_id";
+            try {
 
-            $elete_user_stmt = $conn->prepare($delete_user_query);
-            $elete_user_stmt->execute();
+                $delete_teacher_query = "DELETE FROM `teachers` WHERE teacher_id=$teacher_id";
 
-            $returnData = msg(1, 201, 'You have successfully deleted this teacher.');
+                $delete_teacher_stmt = $conn->prepare($delete_teacher_query);
+                $delete_teacher_stmt->execute();
 
-        } catch (PDOException $e) {
-            $returnData = msg(0, 500, $e->getMessage());
-            http_response_code(500);
-            echo json_encode(['error'=>$e->getMessage()]);
-            exit;
+                $delete_user_query = "DELETE FROM `users` WHERE user_id=$user_id";
+
+                $elete_user_stmt = $conn->prepare($delete_user_query);
+                $elete_user_stmt->execute();
+
+                $returnData = msg(1, 201, 'You have successfully deleted this teacher.');
+
+            } catch (PDOException $e) {
+                $returnData = msg(0, 500, $e->getMessage());
+                http_response_code(500);
+                echo json_encode(['error'=>$e->getMessage()]);
+                exit;
+            }
+
+        } else {
+            return $error_responses->RoleNotAllowed();
         }
+
     } else {
         return $error_responses->UnAuthorized($isValidToken['message']);
     }

@@ -49,31 +49,38 @@ elseif (
 else :
     $isValidToken = $auth->isValidToken();
     if ($isValidToken['success'] == 1) {
-        $class_id = $_GET['class_id'];
-        $date = $_GET['date'];
+        $loggedUserRole = $isValidToken['data']['role'];
 
-        try {
+        if ($loggedUserRole === 3) {
+            $class_id = $_GET['class_id'];
+            $date = $_GET['date'];
 
-                       $list_query = "SELECT * 
-                            from `grades` 
-                            WHERE class_id = $class_id AND date = '" .date('Y-m-d', strtotime($date)). "' ";
+            try {
 
-            $query_stmt = $conn->prepare($list_query);
-            $query_stmt->execute();
-            $row = $query_stmt->fetchALL(PDO::FETCH_ASSOC);
+                $list_query = "SELECT * 
+                    from `grades` 
+                    WHERE class_id = $class_id AND date = '" .date('Y-m-d', strtotime($date)). "' ";
 
-            $returnData = [
-                    'success' => 1,
-                    'message' => 'You have successfully get grades.',
-                    'data' => $query_stmt->rowCount() ? true : false
-                ];
+                $query_stmt = $conn->prepare($list_query);
+                $query_stmt->execute();
+                $row = $query_stmt->fetchALL(PDO::FETCH_ASSOC);
 
-        } catch (PDOException $e) {
-            $returnData = msg(0, 500, $e->getMessage());
-            http_response_code(500);
-            echo json_encode(['error'=>$e->getMessage()]);
-            exit;
+                $returnData = [
+                        'success' => 1,
+                        'message' => 'You have successfully get grades.',
+                        'data' => $query_stmt->rowCount() ? true : false
+                    ];
+
+            } catch (PDOException $e) {
+                $returnData = msg(0, 500, $e->getMessage());
+                http_response_code(500);
+                echo json_encode(['error'=>$e->getMessage()]);
+                exit;
+            }
+        } else {
+            return $error_responses->RoleNotAllowed();
         }
+
     } else {
         return $error_responses->UnAuthorized($isValidToken['message']);
     }

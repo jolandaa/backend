@@ -47,32 +47,42 @@ elseif (
 else :
     $isValidToken = $auth->isValidToken();
     if ($isValidToken['success'] == 1) {
-        $student_id = $_GET['student_id'];
 
-        try {
+        $loggedUserRole = $isValidToken['data']['role'];
 
-            $list_query = "SELECT * 
-                            from `attendance` 
-                            INNER JOIN `students` 
-                            ON attendance.student_id = $student_id AND attendance.status = 1 AND students.nr_amzes = attendance.student_id
-                            INNER JOIN `classes`
-                            ON attendance.class_id = classes.class_id";
-            $query_stmt = $conn->prepare($list_query);
-            $query_stmt->execute();
-            $row = $query_stmt->fetchALL(PDO::FETCH_ASSOC);
+        if ($loggedUserRole === 4) {
 
-            $returnData = [
-                    'success' => 1,
-                    'message' => 'You have successfully get attendance.',
-                    'data' => $row
-                ];
+            $student_id = $_GET['student_id'];
 
-        } catch (PDOException $e) {
-            $returnData = msg(0, 500, $e->getMessage());
-            http_response_code(500);
-            echo json_encode(['error'=>$e->getMessage()]);
-            exit;
+            try {
+
+                $list_query = "SELECT * 
+                                from `attendance` 
+                                INNER JOIN `students` 
+                                ON attendance.student_id = $student_id AND attendance.status = 1 AND students.nr_amzes = attendance.student_id
+                                INNER JOIN `classes`
+                                ON attendance.class_id = classes.class_id";
+                $query_stmt = $conn->prepare($list_query);
+                $query_stmt->execute();
+                $row = $query_stmt->fetchALL(PDO::FETCH_ASSOC);
+
+                $returnData = [
+                        'success' => 1,
+                        'message' => 'You have successfully get attendance.',
+                        'data' => $row
+                    ];
+
+            } catch (PDOException $e) {
+                $returnData = msg(0, 500, $e->getMessage());
+                http_response_code(500);
+                echo json_encode(['error'=>$e->getMessage()]);
+                exit;
+            }
+
+        } else {
+            return $error_responses->RoleNotAllowed();
         }
+        
     } else {
         return $error_responses->UnAuthorized($isValidToken['message']);
     }
