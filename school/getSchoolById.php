@@ -50,7 +50,7 @@ else :
 
         $loggedUserRole = $isValidToken['data']['role'];
 
-        if ($loggedUserRole === 1 || $loggedUserRole === 2 || $loggedUserRole === 3 ) {
+        if ($loggedUserRole === 1 || $loggedUserRole === 2 || $loggedUserRole === 3  || $loggedUserRole === 4) {
 
             $school_id = $_GET['school_id'];
 

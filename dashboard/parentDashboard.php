@@ -50,7 +50,7 @@ else :
     $isValidToken = $auth->isValidToken();
     if ($isValidToken['success'] == 1) {
         $loggedUserRole = $isValidToken['data']['role'];
-        if ($loggedUserRole === 2) {
+        if ($loggedUserRole === 4) {
             $parent_id = $_GET['parent_id'];
 
 
