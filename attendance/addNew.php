@@ -5,6 +5,7 @@ header("Access-Control-Allow-Methods: POST");
 header("Content-Type: application/json; charset=UTF-8");
 header("Access-Control-Allow-Headers: Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With");
 
+
 require __DIR__ . '/../shared/Database.php';
 require __DIR__.'/../AuthMiddleware.php';
 require __DIR__ . '/../shared/errorResponses.php';
@@ -85,7 +86,6 @@ else :
 
                 }
                 $returnData = msg(1, 200, 'You have successfully added this el.');
-
             } catch (PDOException $e) {
                 $returnData = msg(0, 500, $e->getMessage());
                 http_response_code(500);

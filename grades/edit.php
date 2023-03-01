@@ -8,6 +8,7 @@ header("Access-Control-Allow-Headers: Content-Type, Access-Control-Allow-Headers
 require __DIR__ . '/../shared/Database.php';
 require __DIR__.'/../AuthMiddleware.php';
 require __DIR__ . '/../shared/errorResponses.php';
+require __DIR__. '/../shared/SendEmail.php';
 
 $allHeaders = getallheaders();
 
@@ -15,6 +16,7 @@ $db_connection = new Database();
 $conn = $db_connection->dbConnection();
 $auth = new Auth($conn, $allHeaders);
 $error_responses = new ErrorResponses();
+$sendEmail = new SendEmail();
 
 function msg($success, $status, $message, $extra = [])
 {
@@ -89,6 +91,28 @@ else :
                     $insert_stmt->bindValue(':grade', $grade, PDO::PARAM_STR);                
                     $insert_stmt->execute();
 
+
+
+                    if ($status === 1) {
+                        $list_query = "SELECT users.email as parentEmail, users.first_name as parentName, students.first_name as studentName from students
+                                    INNER JOIN `parents` 
+                                    ON students.parent_id = parents.parent_id
+                                    INNER JOIN `users`
+                                    ON users.user_id = parents.user_id
+                                    where students.nr_amzes ='$student_id'";
+                        $query_stmt = $conn->prepare($list_query);
+                        $query_stmt->execute();
+                        $row = $query_stmt->fetch(PDO::FETCH_ASSOC);
+
+                        $parent_email = $row['parentEmail'];
+                        $parent_name = $row['parentName'];
+                        $studentName = $row['studentName'];
+
+
+                        $content = '<h1>Eshte shtuar nje mungese e re per studentin me numer amze: '.$student_id.'</h1>';
+                        
+                        $mail = $sendEmail->sendEmail($parent_email, $parent_name, "Nje munges e re per ".$student_id, $content);
+                    }
 
                 }
                     $returnData = msg(1, 200, 'You have successfully edited this grade.');

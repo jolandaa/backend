@@ -5,17 +5,12 @@ header("Access-Control-Allow-Methods: POST");
 header("Content-Type: application/json; charset=UTF-8");
 header("Access-Control-Allow-Headers: Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With");
 
-use PHPMailer\PHPMailer\PHPMailer;
-use PHPMailer\PHPMailer\SMTP;
-use PHPMailer\PHPMailer\Exception;
 
 require __DIR__.'/shared/Database.php';
 require __DIR__. '/shared/errorResponses.php';
+require __DIR__. '/shared/SendEmail.php';
 require __DIR__.'/shared/JwtHandler.php';
 
-require_once __DIR__ . '/vendor/phpmailer/src/Exception.php';
-require_once __DIR__ . '/vendor/phpmailer/src/PHPMailer.php';
-require_once __DIR__ . '/vendor/phpmailer/src/SMTP.php';
 
 function msg($success, $status, $message, $extra = [])
 {
@@ -30,6 +25,7 @@ function msg($success, $status, $message, $extra = [])
 $db_connection = new Database();
 $conn = $db_connection->dbConnection();
 $error_responses = new ErrorResponses();
+$sendEmail = new SendEmail();
 
 $data = json_decode(file_get_contents("php://input"));
 
@@ -63,25 +59,6 @@ else:
                 array("user_id"=> $user_id,"role"=> $role)
             );
 
-
-
-            $mail = new PHPMailer();
-            $mail->IsSMTP();
-            $mail->Mailer = "smtp";
-
-            $mail->SMTPDebug  = 1;  
-            $mail->SMTPAuth   = TRUE;
-            $mail->SMTPSecure = "tls";
-            $mail->Port       = 587;
-            $mail->Host       = "smtp.gmail.com";
-            $mail->Username   = "bregujola@gmail.com";
-            $mail->Password   = "frucuajvouczcmul";
-
-            $mail->IsHTML(true);
-            $mail->AddAddress($email, $name);
-            $mail->SetFrom("bregujola@gmail.com", "School Management System");
-            $mail->AddReplyTo("bregujola@gmail.com", "School Management System");
-            $mail->Subject = "Reset your password";
             $resetLink = "http://localhost:4200/forgot-passw/".$token."/".$email;
             $content = '
                 <!doctype html>
@@ -153,8 +130,10 @@ else:
 
                 </html>';
 
-            $mail->MsgHTML($content); 
-            if(!$mail->Send()) {
+
+            $mail = $sendEmail->sendEmail($email, $name, "Reset your password", $content);
+
+            if(!$mail) {
                $returnData = [
                             'success' => 1,
                             'message' => 'Error while sending Email.',
