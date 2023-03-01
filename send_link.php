@@ -82,7 +82,7 @@ else:
             $mail->SetFrom("bregujola@gmail.com", "School Management System");
             $mail->AddReplyTo("bregujola@gmail.com", "School Management System");
             $mail->Subject = "Reset your password";
-            $resetLink = "http://localhost:4200/forgot-passw/".$token;
+            $resetLink = "http://localhost:4200/forgot-passw/".$token."/".$email;
             $content = '
                 <!doctype html>
                 <html lang="en-US">

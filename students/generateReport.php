@@ -84,28 +84,25 @@ else :
                     $query_stmt1->execute();
                     $row1 = $query_stmt1->fetchALL(PDO::FETCH_ASSOC);
 
-                    $classNameOfStudent = $row1[0]['class_name'];
-                    $gradeOfStudent = $row1[0]['average_mark'];
+                    if($query_stmt1->rowCount() > 0) {
+
+                        $classNameOfStudent = $row1[0]['class_name'];
+                        $gradeOfStudent = $row1[0]['average_mark'];
 
 
+                        $list_query2 = "SELECT COUNT(*) AS count_present, (SELECT COUNT(*) FROM `attendance` WHERE attendance.attendance_value = 2 AND            attendance.student_id = $nr_amzes AND attendance.status = 1) AS count_absent  from `attendance`
+                                        WHERE attendance.student_id = $nr_amzes AND attendance.status = 1 AND attendance.attendance_value = 1";
+                        $query_stmt2 = $conn->prepare($list_query2);
+                        $query_stmt2->execute();
+                        $row2 = $query_stmt2->fetchALL(PDO::FETCH_ASSOC);
 
 
-                    $list_query2 = "SELECT COUNT(*) AS count_present, (SELECT COUNT(*) FROM `attendance` WHERE attendance.attendance_value = 2 AND attendance.student_id = $nr_amzes AND attendance.status = 1) AS count_absent  from `attendance`
-                                    WHERE attendance.student_id = $nr_amzes AND attendance.status = 1 AND attendance.attendance_value = 1";
-                    $query_stmt2 = $conn->prepare($list_query2);
-                    $query_stmt2->execute();
-                    $row2 = $query_stmt2->fetchALL(PDO::FETCH_ASSOC);
+                        if($query_stmt2->rowCount() > 0) {
 
-                    $present = $row2[0]['count_present'];
-                    $absent = $row2[0]['count_absent'];
+                            $present = $row2[0]['count_present'];
+                            $absent = $row2[0]['count_absent'];
 
-
-
-                    $pdf = new TCPDF(PDF_PAGE_ORIENTATION, PDF_UNIT, PDF_PAGE_FORMAT, true, 'UTF-8', false);
-
-                    $pdf->AddPage();
-
-                    $html = '<!DOCTYPE html>
+                            $html = '<!DOCTYPE html>
                                 <html>
                                 <body style="font-family: Arial, sans-serif;margin: 0;padding: 0;">
                                     <header style="background-color: #1E90FF;color: #fff;padding: 20px;text-align: center;">
@@ -160,20 +157,146 @@ else :
                                 </body>
                                 </html>
                                 ';
+                        } else {
+
+                            $html = '<!DOCTYPE html>
+                                <html>
+                                <body style="font-family: Arial, sans-serif;margin: 0;padding: 0;">
+                                    <header style="background-color: #1E90FF;color: #fff;padding: 20px;text-align: center;">
+                                        <h1 style="margin: 0;">Student Report</h1>
+                                    </header>
+                                    <main style="max-width: 800px;margin: 20px auto;padding: 20px;background-color: #fff;box-shadow: 0 0 10px rgba(0,0,0,0.2);">
+                                        <table style="width: 100%;border-collapse: collapse;margin-bottom: 20px;">
+                                            <tr>
+                                                <th style="background-color: #1E90FF;color: #fff;padding: 10px;border: 1px solid #ccc;text-align: left;">Student Name:</th>
+                                                <td style="padding: 10px;border: 1px solid #ccc;text-align: left;">'.$name.'</td>
+                                            </tr>
+                                            <tr>
+                                                <th style="background-color: #1E90FF;color: #fff;padding: 10px;border: 1px solid #ccc;text-align: left;">Father Name:</th>
+                                                <td style="padding: 10px;border: 1px solid #ccc;text-align: left;">'.$fatherName.'</td>
+                                            </tr>
+                                            <tr>
+                                                <th style="background-color: #1E90FF;color: #fff;padding: 10px;border: 1px solid #ccc;text-align: left;">Date of Birth:</th>
+                                                <td style="padding: 10px;border: 1px solid #ccc;text-align: left;">'.$dateOfBirth.'</td>
+                                            </tr>
+                                            <tr>
+                                                <th style="background-color: #1E90FF;color: #fff;padding: 10px;border: 1px solid #ccc;text-align: left;">Email:</th>
+                                                <td style="padding: 10px;border: 1px solid #ccc;text-align: left;">'.$email.'</td>
+                                            </tr>
+                                        </table>
+                                        <h2>Grades</h2>
+                                        <table>
+                                            <tr>
+                                                <th style="background-color: #1E90FF;color: #fff;padding: 10px;border: 1px solid #ccc;text-align: left;">Class</th>
+                                                <th style="background-color: #1E90FF;color: #fff;padding: 10px;border: 1px solid #ccc;text-align: left;">Grade</th>
+                                            </tr>
+                                            <tr>
+                                                <td style="padding: 10px;border: 1px solid #ccc;text-align: left;">'.$classNameOfStudent.'</td>
+                                                <td style="padding: 10px;border: 1px solid #ccc;text-align: left;">'.$gradeOfStudent.'</td>
+                                            </tr>
+                                        </table>
+                                        <h2>Atendances</h2>
+                                        <table>
+                                            <tr>
+                                                <th style="background-color: #1E90FF;color: #fff;padding: 10px;border: 1px solid #ccc;text-align: left;"></th>
+                                                <th style="background-color: #1E90FF;color: #fff;padding: 10px;border: 1px solid #ccc;text-align: left;">Total</th>
+                                            </tr>
+                                            <tr>
+                                                <td style="padding: 10px;border: 1px solid #ccc;text-align: left;">Present</td>
+                                                // <td style="padding: 10px;border: 1px solid #ccc;text-align: left;">Nuk ka asnje te dhene per kete student</td>
+                                            </tr>
+                                            <tr>
+                                                <td style="padding: 10px;border: 1px solid #ccc;text-align: left;">Absent</td>
+                                                <td style="padding: 10px;border: 1px solid #ccc;text-align: left;">Nuk ka asnje te dhene per kete student</td>
+                                            </tr>
+                                        </table>
+                                    </main>
+                                </body>
+                                </html>
+                                ';
+                        }
+
+
+
+                    } else {
+
+                        $html = '<!DOCTYPE html>
+                            <html>
+                            <body style="font-family: Arial, sans-serif;margin: 0;padding: 0;">
+                                <header style="background-color: #1E90FF;color: #fff;padding: 20px;text-align: center;">
+                                    <h1 style="margin: 0;">Student Report</h1>
+                                </header>
+                                <main style="max-width: 800px;margin: 20px auto;padding: 20px;background-color: #fff;box-shadow: 0 0 10px rgba(0,0,0,0.2);">
+                                    <table style="width: 100%;border-collapse: collapse;margin-bottom: 20px;">
+                                        <tr>
+                                            <th style="background-color: #1E90FF;color: #fff;padding: 10px;border: 1px solid #ccc;text-align: left;">Student Name:</th>
+                                            <td style="padding: 10px;border: 1px solid #ccc;text-align: left;">'.$name.'</td>
+                                        </tr>
+                                        <tr>
+                                            <th style="background-color: #1E90FF;color: #fff;padding: 10px;border: 1px solid #ccc;text-align: left;">Father Name:</th>
+                                            <td style="padding: 10px;border: 1px solid #ccc;text-align: left;">'.$fatherName.'</td>
+                                        </tr>
+                                        <tr>
+                                            <th style="background-color: #1E90FF;color: #fff;padding: 10px;border: 1px solid #ccc;text-align: left;">Date of Birth:</th>
+                                            <td style="padding: 10px;border: 1px solid #ccc;text-align: left;">'.$dateOfBirth.'</td>
+                                        </tr>
+                                        <tr>
+                                            <th style="background-color: #1E90FF;color: #fff;padding: 10px;border: 1px solid #ccc;text-align: left;">Email:</th>
+                                            <td style="padding: 10px;border: 1px solid #ccc;text-align: left;">'.$email.'</td>
+                                        </tr>
+                                    </table>
+                                    <h2>Grades</h2>
+                                    <table>
+                                        <tr>
+                                            <th style="background-color: #1E90FF;color: #fff;padding: 10px;border: 1px solid #ccc;text-align: left;">Class</th>
+                                            <th style="background-color: #1E90FF;color: #fff;padding: 10px;border: 1px solid #ccc;text-align: left;">Grade</th>
+                                        </tr>
+                                        <tr>
+                                            <td style="padding: 10px;border: 1px solid #ccc;text-align: left;"colspan="2">Nuk ka asnje note per kete student</td>
+                                        </tr>
+                                    </table>
+                                    <h2>Atendances</h2>
+                                    <table>
+                                        <tr>
+                                            <th style="background-color: #1E90FF;color: #fff;padding: 10px;border: 1px solid #ccc;text-align: left;"></th>
+                                            <th style="background-color: #1E90FF;color: #fff;padding: 10px;border: 1px solid #ccc;text-align: left;">Total</th>
+                                        </tr>
+                                        <tr>
+                                            <td style="padding: 10px;border: 1px solid #ccc;text-align: left;">Present</td>
+                                            <td style="padding: 10px;border: 1px solid #ccc;text-align: left;">Nuk ka asnje te dhene per kete student</td>
+                                        </tr>
+                                        <tr>
+                                            <td style="padding: 10px;border: 1px solid #ccc;text-align: left;">Absent</td>
+                                            <td style="padding: 10px;border: 1px solid #ccc;text-align: left;">Nuk ka asnje te dhene per kete student</td>
+                                        </tr>
+                                    </table>
+                                </main>
+                            </body>
+                            </html>
+                            ';
+                    }
+
+
+                    $pdf = new TCPDF(PDF_PAGE_ORIENTATION, PDF_UNIT, PDF_PAGE_FORMAT, true, 'UTF-8', false);
+
+                    $pdf->AddPage();
+
+                    
 
                     $pdf->writeHTML($html, true, false, true, false, '');
 
                     $pdf->Output('example.pdf', 'I');
 
-
+                } else {
+                    return $error_responses->BadPayload('There is not any student with this number!');
                 }
 
 
             } catch (PDOException $e) {
                 $returnData = msg(0, 500, $e->getMessage());
-                                http_response_code(500);
-                        echo json_encode(['error'=>$e->getMessage()]);
-                        exit;
+                http_response_code(500);
+                echo json_encode(['error'=>$e->getMessage()]);
+                exit;
             }
     
         } else {
